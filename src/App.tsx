@@ -16,7 +16,7 @@ function App() {
   return (
     <div className="App">
       {!hideNavbarRoutes.includes(location.pathname) && <Navbar />}
-      <div className="container mx-auto px-4">
+      <>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
@@ -25,7 +25,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>
-      </div>
+      </>
       {!hideNavbarRoutes.includes(location.pathname) && <Footer />}
     </div>
   )

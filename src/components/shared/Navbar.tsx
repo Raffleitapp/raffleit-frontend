@@ -32,7 +32,7 @@ const Navbar = () => {
                 </ul>
                 <div className="hidden md:flex items-center space-x-4">
                     {/* Desktop Buttons */}
-                    <a href="/register" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-center">
+                    <a href="/register" className="bg-btn-primary hover:bg-btn-secondary text-white font-bold py-2 px-4 rounded text-center">
                         Sign Up
                     </a>
                     <a href="/login" className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded text-center">
@@ -88,7 +88,7 @@ const Navbar = () => {
                         </li>
                     </ul>
                     <div className="flex flex-col space-y-2 mt-4">
-                        <a href="/register" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-center">
+                        <a href="/register" className="bg-btn-primary hover:bg-btn-secondary text-white font-bold py-2 px-4 rounded text-center">
                             Sign Up
                         </a>
                         <a href="/login" className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded text-center">

@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from './Hero.module.css';
+import styles from '../assets/css/Hero.module.css';
 
 interface HeroProps {
     backgroundImage: string;
