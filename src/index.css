@@ -1,1 +1,8 @@
 @import 'tailwindcss';
+
+@theme{
+    --color-btn-primary: #55c595;
+    --color-btn-primary-hover: #4abf8d;
+    --color-btn-primary-active: #3da77e;
+    --color-btn-primary-focus: #3da77e;
+}

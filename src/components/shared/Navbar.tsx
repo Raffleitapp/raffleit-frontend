@@ -63,7 +63,7 @@ const Navbar = () => {
 
             {/* Mobile Navbar */}
             {isMobileMenuOpen && (
-                <div className="md:hidden absolute top-16 left-0 w-full bg-gray-800 text-white p-4">
+                <div className="md:hidden absolute left-0 w-full bg-gray-800 text-white p-4">
                     <ul className="flex flex-col space-y-2">
                         <li>
                             <a href="/" className="hover:text-gray-400">
@@ -87,12 +87,12 @@ const Navbar = () => {
                         </li>
                     </ul>
                     <div className="flex flex-col space-y-2 mt-4">
-                        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        <a href="/register" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-center">
                             Sign Up
-                        </button>
-                        <button className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
+                        </a>
+                        <a href="/login" className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded text-center">
                             Sign In
-                        </button>
+                        </a>
                     </div>
                 </div>
             )}

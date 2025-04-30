@@ -1,6 +1,11 @@
 
 export const About = () => {
   return (
-    <div>About</div>
+    <>
+      <div className="hero-section">
+
+      </div>
+      
+    </>
   )
 }
