@@ -48,18 +48,18 @@ export const Home = () => {
       <div className="bg-text-primary my-8 mx-auto px-4 py-4">
         <h2 className="text-4xl font-bold text-center text-btn-primary mb-6">Raffleit <span className='text-white'>Collections</span></h2>
         <p className="text-base text-gray-300 text-center mb-8">
-          Raffleit provides opportunities to raise funds for business, non-profit organizations, or even to give persons a wide range of opportunities to raffle items or own items once you have taken part in the raffle.
+          Raffleit provides opportunities to raise funds for business, individuals and organizations, or even to give persons a wide range of opportunities to raffle items or own items once you have taken part in the raffle.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="flex flex-col items-center justify-center p-4 border border-gray-600 rounded shadow-md bg-gray-800">
             <h3 className="text-xl font-semibold text-btn-primary mb-2">Live Draws</h3>
           </div>
           <div className="flex flex-col items-center justify-center p-4 border border-gray-600 rounded shadow-md bg-gray-800">
             <h3 className="text-xl font-semibold text-btn-primary mb-2">Business</h3>
           </div>
-          <div className="flex flex-col items-center justify-center p-4 border border-gray-600 rounded shadow-md bg-gray-800">
+          {/* <div className="flex flex-col items-center justify-center p-4 border border-gray-600 rounded shadow-md bg-gray-800">
             <h3 className="text-xl font-semibold text-btn-primary mb-2">Non-Profit</h3>
-          </div>
+          </div> */}
           <div className="flex flex-col items-center justify-center p-4 border border-gray-600 rounded shadow-md bg-gray-800">
             <h3 className="text-xl font-semibold text-btn-primary mb-2">Fundraising</h3>
           </div>
