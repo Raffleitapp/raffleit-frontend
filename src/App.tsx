@@ -8,6 +8,7 @@ import { Contact } from './pages/Contact'
 import { HowItWorks } from './pages/HowItWorks'
 import { Login } from './pages/auth/Login'
 import { Register } from './pages/auth/Register'
+import { Raffles } from './pages/Raffles'
 
 function App() {
   const location = useLocation();
@@ -24,6 +25,8 @@ function App() {
           <Route path="/howitworks" element={<HowItWorks />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/raffles" element={<Raffles />} />
+          <Route path="*" element={<div>404 Not Found</div>} />
         </Routes>
       </>
       {!hideNavbarRoutes.includes(location.pathname) && <Footer />}

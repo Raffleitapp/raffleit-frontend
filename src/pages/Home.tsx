@@ -12,6 +12,7 @@ export const Home = () => {
         subtitle='Raffleit provides opportunities to raise funds for business or even to give persons a wide range of opportunity to raffle items or own items once you have taken part in the raffle.'
         linkText="How it works"
         linkHref='/howitworks'
+        height={75}
       />
       <div className="container">
         <div className="grid grid-cols-1 md:grid-cols-2 items-center justify-center mt-4">
