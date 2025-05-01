@@ -12,7 +12,7 @@ interface HeroProps {
 export const Hero: React.FC<HeroProps> = ({ backgroundImage, title, subtitle, linkHref, height, linkText }) => {
     return (
         <div
-            className={styles.hero}
+            className={`${styles.hero} mt-16 md:mt-14 w-full flex items-center justify-center text-center bg-cover bg-no-repeat`}
             style={{
                 backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${backgroundImage})`,
                 backgroundSize: 'cover',
