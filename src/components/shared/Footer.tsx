@@ -6,7 +6,7 @@ export const Footer = () => {
                 <div className="col-span-1 ml-4">
                     <h2 className="text-lg font-bold">RaffleitApp</h2>
                     <p className="text-sm">
-                        Raffleit provides opportunities to raise funds for business, non-profit organizations, or even to give individuals a wide range of opportunities to raffle items or own items once they have taken part in the raffle.
+                        Raffleit provides opportunities to raise funds for business,Individuals and Organizations giving them a wide range of opportunities to raffle items or own items once they have taken part in the raffle.
                     </p>
                 </div>
                 <div className="col-span-1 ml-4">
@@ -25,7 +25,7 @@ export const Footer = () => {
                 </div>
                 <div className="col-span-1 ml-4">
                     <h2 className="text-lg font-bold">Contact Us</h2>
-                    <p className="text-sm">Email:aaron@gmail</p>
+                    <p className="text-sm">Email: info@raffleitapp.com</p>
                     <p className="text-sm">Phone: +1 234 567 890</p>
                     <p className="text-sm">Address: 123 Raffleit St, City, Country</p>
                 </div>
@@ -40,11 +40,6 @@ export const Footer = () => {
                     <a href="https://www.linkedin.com" className="text-sm">LinkedIn</a>
                     <br />
                     <a href="https://www.youtube.com" className="text-sm">YouTube</a>
-                    <br />
-                    <a href="https://www.tiktok.com" className="text-sm">TikTok</a>
-                    <br />
-                    <a href="https://www.pinterest.com" className="text-sm">Pinterest</a>
-                    <br />
                 </div>
             </div>
             <hr className="mt-4 py-2 px-2 w-95/100 mx-auto" />

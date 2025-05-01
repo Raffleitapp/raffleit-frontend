@@ -1,7 +1,7 @@
 .hero {
-    background-size: cover;
+    background-size: contain no-repeat;
     background-position: center;
-    height: 60vh;
+    height: 75vh;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -15,6 +15,7 @@
 .hero h1 {
     font-size: 3rem;
     margin: 0;
+    font-weight: bold;
 }
 
 .hero p {
@@ -22,7 +23,21 @@
     margin-top: 10px;
 }
 
+.heroButton {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
 @media (max-width: 768px) {
+    .hero {
+        height: 90vh;
+    }
     .hero h1 {
         font-size: 2rem;
     }

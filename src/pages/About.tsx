@@ -1,11 +1,9 @@
+import { Started } from "../components/shared/Started"
 
 export const About = () => {
   return (
     <>
-      <div className="hero-section">
-
-      </div>
-      
+      <Started />
     </>
   )
 }
