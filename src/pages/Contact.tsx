@@ -7,7 +7,7 @@ export const Contact = () => {
 
   return (
     <>
-      <div className="isolate bg-white px-6 py-10 sm:py-15 lg:px-8">
+      <div className="bg-white px-6 py-10 sm:py-15 lg:px-8">
         <div
           aria-hidden="true"
           className="absolute inset-x-0 top-[-10rem] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[-20rem]"
