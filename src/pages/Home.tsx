@@ -1,8 +1,8 @@
 import '../assets/css/main.css';
 import { ChevronRight } from 'lucide-react';
-import { Hero } from '../components/shared/Hero';
-import { Started } from '../components/shared/Started';
-import { Testimonials } from '../components/shared/Testimonials';
+import { Hero } from '../components/Hero';
+import { Started } from '../components/Started';
+import { Testimonials } from '../components/Testimonials';
 
 export const Home = () => {
   return (

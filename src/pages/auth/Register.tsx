@@ -28,16 +28,24 @@ export const Register = () => {
                             </div>
 
                             <div>
-                                <div className="flex items-center justify-between">
-                                    <label htmlFor="password" className="block text-sm/6 font-medium text-gray-900">
-                                        Password
-                                    </label>
-                                    <div className="text-sm">
-                                        <a href="#" className="font-400 text-black-300 hover:text-green-800 underline">
-                                            Forgot password?
-                                        </a>
-                                    </div>
+                                <label htmlFor="password" className="block text-sm/6 font-medium text-gray-900">
+                                    Password
+                                </label>
+                                <div className="mt-2">
+                                    <input
+                                        id="password"
+                                        name="password"
+                                        type="password"
+                                        required
+                                        autoComplete="current-password"
+                                        className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
+                                    />
                                 </div>
+                            </div>
+                            <div>
+                                <label htmlFor="password" className="block text-sm/6 font-medium text-gray-900">
+                                    Confirm Password
+                                </label>
                                 <div className="mt-2">
                                     <input
                                         id="password"
