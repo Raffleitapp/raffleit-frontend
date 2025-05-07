@@ -1,22 +1,22 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/authUtils';
 
-export function ProtectedRoute({
+export const ProtectedRoute = ({
   element,
   allowedRoles,
 }: {
   element: React.ReactElement;
   allowedRoles: ('host' | 'admin')[];
-}) {
+}) => {
   const { isAuthenticated, user } = useAuth();
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user?.role) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!user.role || !allowedRoles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />; // Redirect to dashboard home if unauthorized
+  if (!allowedRoles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return element;
-}
+};
