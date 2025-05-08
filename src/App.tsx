@@ -20,14 +20,12 @@ import NotFound from './pages/NotFound';
 function PublicLayout() {
   const location = useLocation();
 
-  // Define valid public routes
+  // Define valid public routes where Navbar and Footer should be shown
   const validPublicRoutes = [
     '/',
     '/about',
     '/contact',
     '/howitworks',
-    '/login',
-    '/register',
     '/raffles',
   ];
 
@@ -36,8 +34,8 @@ function PublicLayout() {
     validPublicRoutes.includes(location.pathname) ||
     /^\/raffles\/[^/]+$/.test(location.pathname);
 
-  // Render Navbar and Footer only for valid routes
-  const showLayout = isValidRoute;
+  // Explicitly exclude /login and /register from showing Navbar and Footer
+  const showLayout = isValidRoute && !['/login', '/register'].includes(location.pathname);
 
   return (
     <>
@@ -51,7 +49,6 @@ function PublicLayout() {
         <Route path="/register" element={<Register />} />
         <Route path="/raffles" element={<Raffles />} />
         <Route path="/raffles/:id" element={<Raffles />} />
-        {/* Catch-all for undefined routes */}
         <Route path="*" element={<NotFound />} />
       </Routes>
       {showLayout && <Footer />}
