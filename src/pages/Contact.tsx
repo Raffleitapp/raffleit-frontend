@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronRight } from "lucide-react"
-import { Started } from "../components/Started"
+import { Started } from "../components/main/Started"
 
 export const Contact = () => {
 

@@ -2,14 +2,14 @@ import { Dices, LayoutDashboard, LogOut, Settings, Ticket, User, Users, Menu, X 
 import { useState } from "react";
 
 const sidebarItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "#dashboard" },
-    { icon: LayoutDashboard, label: "Category", href: "#category" },
-    { icon: Ticket, label: "Tickets", href: "#tickets" },
-    { icon: Dices, label: "Live Raffles", href: "#liveraffles" },
-    { icon: LayoutDashboard, label: "Completed Raffles", href: "#completedraffles" },
-    { icon: Users, label: "Users", href: "#users" },
-    { icon: Settings, label: "Settings", href: "#settings" },
-    { icon: User, label: "Profile", href: "#profile" },
+    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    { icon: LayoutDashboard, label: "Category", href: "dashboard/category" },
+    { icon: Ticket, label: "Tickets", href: "dashboard/tickets" },
+    { icon: Dices, label: "Live Raffles", href: "dashboard/liveraffles" },
+    { icon: LayoutDashboard, label: "Completed Raffles", href: "dashboard/completedraffles" },
+    { icon: Users, label: "Users", href: "/dashboard/users" },
+    { icon: Settings, label: "Settings", href: "/dashboard/settings" },
+    { icon: User, label: "Profile", href: "/dashboard/profile" },
     { icon: LogOut, label: "Logout", href: "#logout" },
 ];
 
@@ -36,11 +36,11 @@ export const Sidebar = () => {
                     {sidebarItems.map(({ icon: Icon, label, href }, index) => (
                         <li
                             key={index}
-                            className="mb-2 mt-4 gap-2 flex items-center hover:scale-110 hover:text-blue-500 transition-transform duration-200 group"
+                            className="mb-2 mt-4 gap-2 flex items-center p-2 rounded-md transition-colors duration-200 group hover:bg-white hover:text-blue-900"
                         >
-                            <Icon className="text-white" size={18} />
+                            <Icon className="text-white group-hover:text-blue-900" size={18} />
                             <a href={href} className="flex items-center">
-                                <span className="md:inline-block ml-2 text-white group-hover:text-blue-500">
+                                <span className="md:inline-block ml-2 text-white group-hover:text-blue-900">
                                     {label}
                                 </span>
                             </a>

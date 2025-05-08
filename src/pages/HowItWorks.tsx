@@ -1,7 +1,7 @@
 import { ChevronRight } from "lucide-react"
 import { useState } from "react"
-import { Started } from "../components/Started"
-import { Hero } from "../components/Hero"
+import { Started } from "../components/main/Started"
+import { Hero } from "../components/main/Hero"
 
 export const HowItWorks = () => {
   const [activeTab, setActiveTab] = useState<string>("host")
