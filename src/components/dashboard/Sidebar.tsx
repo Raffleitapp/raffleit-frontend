@@ -1,12 +1,13 @@
 import { Dices, LayoutDashboard, LogOut, Settings, Ticket, User, Users, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-    { icon: LayoutDashboard, label: "Category", href: "dashboard/category" },
-    { icon: Ticket, label: "Tickets", href: "dashboard/tickets" },
-    { icon: Dices, label: "Live Raffles", href: "dashboard/liveraffles" },
-    { icon: LayoutDashboard, label: "Completed Raffles", href: "dashboard/completedraffles" },
+    { icon: LayoutDashboard, label: "Category", href: "/dashboard/category" },
+    { icon: Ticket, label: "Tickets", href: "/dashboard/tickets" },
+    { icon: Dices, label: "Live Raffles", href: "/dashboard/liveraffles" },
+    { icon: LayoutDashboard, label: "Completed Raffles", href: "/dashboard/completedraffles" },
     { icon: Users, label: "Users", href: "/dashboard/users" },
     { icon: Settings, label: "Settings", href: "/dashboard/settings" },
     { icon: User, label: "Profile", href: "/dashboard/profile" },
@@ -15,6 +16,7 @@ const sidebarItems = [
 
 export const Sidebar = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const location = useLocation();
 
     return (
         <>
@@ -23,7 +25,7 @@ export const Sidebar = () => {
                 className={`fixed top-3 left-3 z-50 p-2 rounded md:hidden transition-colors duration-300 ${isSidebarOpen ? "bg-white text-blue-900" : "bg-blue-900 text-white"}`}
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             >
-                {isSidebarOpen ? <X size={24} className="text-bold"/> : <Menu size={24} />}
+                {isSidebarOpen ? <X size={24} className="text-bold" /> : <Menu size={24} />}
             </button>
 
             {/* Sidebar */}
@@ -33,19 +35,22 @@ export const Sidebar = () => {
             >
                 <h2 className="text-xl font-bold mb-4 text-white">Raffleit</h2>
                 <ul className="list-none">
-                    {sidebarItems.map(({ icon: Icon, label, href }, index) => (
-                        <li
-                            key={index}
-                            className="mb-2 mt-4 gap-2 flex items-center p-2 rounded-md transition-colors duration-200 group hover:bg-white hover:text-blue-900"
-                        >
-                            <Icon className="text-white group-hover:text-blue-900" size={18} />
-                            <a href={href} className="flex items-center">
-                                <span className="md:inline-block ml-2 text-white group-hover:text-blue-900">
-                                    {label}
-                                </span>
-                            </a>
-                        </li>
-                    ))}
+                    {sidebarItems.map(({ icon: Icon, label, href }, index) => {
+                        const isActive = location.pathname === href;
+                        return (
+                            <li
+                                key={index}
+                                className={`mb-2 mt-2 gap-2 flex items-center p-2 rounded-md transition-colors duration-200 group ${isActive ? "bg-white text-blue-900" : "hover:bg-white hover:text-blue-900"}`}
+                            >
+                                <Icon className={`${isActive ? "text-blue-900" : "text-white"} group-hover:text-blue-900`} size={18} />
+                                <a href={href} className="flex items-center">
+                                    <span className={`md:inline-block ml-2 ${isActive ? "text-blue-900" : "text-white"} group-hover:text-blue-900`}>
+                                        {label}
+                                    </span>
+                                </a>
+                            </li>
+                        );
+                    })}
                 </ul>
             </div>
         </>
