@@ -15,11 +15,33 @@ import LiveRaffles from './pages/dashboard/LiveRaffles';
 import Category from './pages/dashboard/Category';
 import Profile from './pages/dashboard/Profile';
 import Users from './pages/dashboard/Users';
+import NotFound from './pages/NotFound';
 
 function PublicLayout() {
+  const location = useLocation();
+
+  // Define valid public routes
+  const validPublicRoutes = [
+    '/',
+    '/about',
+    '/contact',
+    '/howitworks',
+    '/login',
+    '/register',
+    '/raffles',
+  ];
+
+  // Check if the route is valid or matches a dynamic raffle route (e.g., /raffles/:id)
+  const isValidRoute =
+    validPublicRoutes.includes(location.pathname) ||
+    /^\/raffles\/[^/]+$/.test(location.pathname);
+
+  // Render Navbar and Footer only for valid routes
+  const showLayout = isValidRoute;
+
   return (
     <>
-      <Navbar />
+      {showLayout && <Navbar />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
@@ -29,10 +51,10 @@ function PublicLayout() {
         <Route path="/register" element={<Register />} />
         <Route path="/raffles" element={<Raffles />} />
         <Route path="/raffles/:id" element={<Raffles />} />
-        {/* 404 Not Found Route */}
-        <Route path="*" element={<div>404 Not Found</div>} />
+        {/* Catch-all for undefined routes */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
-      <Footer />
+      {showLayout && <Footer />}
     </>
   );
 }
@@ -56,16 +78,14 @@ function DashboardLayout() {
       <Route path="/dashboard/category/:id/view" element={<Category />} />
       <Route path="/dashboard/profile" element={<Profile />} />
       <Route path="/dashboard/users" element={<Users />} />
-      {/* 404 Not Found Route */}
-      <Route path="*" element={<div>404 Not Found</div>} />
+      {/* Catch-all for undefined dashboard routes */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
 
 function App() {
   const location = useLocation();
-
-  // Check if the current route is part of the dashboard
   const isDashboardRoute = location.pathname.startsWith('/dashboard');
 
   return (
@@ -74,7 +94,6 @@ function App() {
     </div>
   );
 }
-
 
 function AppWrapper() {
   return (
