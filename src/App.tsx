@@ -3,8 +3,6 @@ import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { Footer } from './components/main/Footer';
 import Navbar from './components/main/Navbar';
 import { AuthProvider } from './context/AuthContext';
-import { ProtectedRoute } from './components/shared/ProtectedRoute';
-import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { Home } from './pages/Home';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
@@ -19,6 +17,7 @@ import Category from './pages/dashboard/Category';
 import Profile from './pages/dashboard/Profile';
 import Users from './pages/dashboard/Users';
 import NotFound from './pages/NotFound';
+import Settings from './pages/dashboard/Settings';
 
 function PublicLayout() {
   const location = useLocation();
@@ -59,7 +58,7 @@ function PublicLayout() {
   );
 }
 
-function DashboardLayout() {
+function DashboardLayoutRoutes() {
   return (
     <Routes>
       <Route path="/dashboard" element={<AdminDashboard />} />
@@ -78,6 +77,7 @@ function DashboardLayout() {
       <Route path="/dashboard/category/:id/view" element={<Category />} />
       <Route path="/dashboard/profile" element={<Profile />} />
       <Route path="/dashboard/users" element={<Users />} />
+      <Route path="/dashboard/settings" element={<Settings />} />
       {/* Catch-all for undefined dashboard routes */}
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -90,7 +90,7 @@ function App() {
 
   return (
     <div className="App">
-      {isDashboardRoute ? <DashboardLayout /> : <PublicLayout />}
+      {isDashboardRoute ? <DashboardLayoutRoutes /> : <PublicLayout />}
     </div>
   );
 }
