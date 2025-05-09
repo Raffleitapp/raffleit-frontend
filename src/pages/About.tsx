@@ -1,6 +1,6 @@
-import { Hero } from "../components/shared/Hero"
-import { Started } from "../components/shared/Started"
-import { Testimonials } from "../components/shared/Testimonials"
+import { Hero } from "../components/main/Hero"
+import { Started } from "../components/main/Started"
+import { Testimonials } from "../components/main/Testimonials"
 
 export const About = () => {
   return (
