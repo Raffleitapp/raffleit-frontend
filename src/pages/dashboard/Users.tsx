@@ -1,4 +1,3 @@
-
 const Users = () => {
   return (
     <div>Users</div>
@@ -6,3 +5,4 @@ const Users = () => {
 }
 
 export default Users
+

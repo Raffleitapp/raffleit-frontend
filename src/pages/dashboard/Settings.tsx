@@ -1,4 +1,3 @@
-
 const Settings = () => {
   return (
     <div>Settings</div>
@@ -6,3 +5,4 @@ const Settings = () => {
 }
 
 export default Settings
+

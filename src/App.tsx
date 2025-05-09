@@ -2,6 +2,9 @@ import './App.css';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { Footer } from './components/main/Footer';
 import Navbar from './components/main/Navbar';
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './components/shared/ProtectedRoute';
+import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { Home } from './pages/Home';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
@@ -92,12 +95,15 @@ function App() {
   );
 }
 
-function AppWrapper() {
+const AppWrapper = () => {
   return (
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
 export default AppWrapper;
+
