@@ -18,6 +18,7 @@ import Profile from './pages/dashboard/Profile';
 import Users from './pages/dashboard/Users';
 import NotFound from './pages/NotFound';
 import Settings from './pages/dashboard/Settings';
+import Tickets from './pages/dashboard/Tickets';
 
 function PublicLayout() {
   const location = useLocation();
@@ -61,25 +62,26 @@ function PublicLayout() {
 function DashboardLayoutRoutes() {
   return (
     <Routes>
-      <Route path="/dashboard" element={<AdminDashboard />} />
-      <Route path="/dashboard/completed-raffles" element={<CompletedRaffles />} />
-      <Route path="/dashboard/raffles" element={<Raffles />} />
-      <Route path="/dashboard/raffles/:id" element={<Raffles />} />
-      <Route path="/dashboard/raffles/:id/edit" element={<Raffles />} />
-      <Route path="/dashboard/raffles/:id/view" element={<Raffles />} />
-      <Route path="/dashboard/raffles/:id/winners" element={<Raffles />} />
-      <Route path="/dashboard/raffles/:id/entries" element={<Raffles />} />
-      <Route path="/dashboard/raffles/:id/entries/:entryId" element={<Raffles />} />
-      <Route path="/dashboard/live-raffles" element={<LiveRaffles />} />
-      <Route path="/dashboard/category" element={<Category />} />
-      <Route path="/dashboard/category/:id" element={<Category />} />
-      <Route path="/dashboard/category/:id/edit" element={<Category />} />
-      <Route path="/dashboard/category/:id/view" element={<Category />} />
-      <Route path="/dashboard/profile" element={<Profile />} />
-      <Route path="/dashboard/users" element={<Users />} />
-      <Route path="/dashboard/settings" element={<Settings />} />
-      {/* Catch-all for undefined dashboard routes */}
-      <Route path="*" element={<NotFound />} />
+      <Route path="/dashboard" element={<AdminDashboard />}>
+        <Route path="/dashboard/completed-raffles" element={<CompletedRaffles />} />
+        <Route path="/dashboard/raffles" element={<Raffles />} />
+        <Route path="/dashboard/raffles/:id" element={<Raffles />} />
+        <Route path="/dashboard/raffles/:id/edit" element={<Raffles />} />
+        <Route path="/dashboard/raffles/:id/view" element={<Raffles />} />
+        <Route path="/dashboard/raffles/:id/winners" element={<Raffles />} />
+        <Route path="/dashboard/raffles/:id/entries" element={<Raffles />} />
+        <Route path="/dashboard/raffles/:id/entries/:entryId" element={<Raffles />} />
+        <Route path="/dashboard/live-raffles" element={<LiveRaffles />} />
+        <Route path="/dashboard/category" element={<Category />} />
+        <Route path="/dashboard/category/:id" element={<Category />} />
+        <Route path="/dashboard/category/:id/edit" element={<Category />} />
+        <Route path="/dashboard/category/:id/view" element={<Category />} />
+        <Route path="/dashboard/profile" element={<Profile />} />
+        <Route path="/dashboard/users" element={<Users />} />
+        <Route path="/dashboard/settings" element={<Settings />} />
+        <Route path="/dashboard/tickets" element={<Tickets />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
     </Routes>
   );
 }
