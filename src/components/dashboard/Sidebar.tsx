@@ -1,6 +1,6 @@
 import { Dices, LayoutDashboard, LogOut, Settings, Ticket, User, Users, Menu, X } from "lucide-react";
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -43,11 +43,11 @@ export const Sidebar = () => {
                                 className={`mb-2 mt-2 gap-2 flex items-center p-2 rounded-md transition-colors duration-200 group ${isActive ? "bg-white text-blue-900" : "hover:bg-white hover:text-blue-900"}`}
                             >
                                 <Icon className={`${isActive ? "text-blue-900" : "text-white"} group-hover:text-blue-900`} size={18} />
-                                <a href={href} className="flex items-center">
+                                <Link to={href} className="flex items-center">
                                     <span className={`md:inline-block ml-2 ${isActive ? "text-blue-900" : "text-white"} group-hover:text-blue-900`}>
                                         {label}
                                     </span>
-                                </a>
+                                </Link>
                             </li>
                         );
                     })}
