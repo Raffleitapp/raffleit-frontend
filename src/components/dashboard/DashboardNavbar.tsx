@@ -1,7 +1,21 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const DashboardNavbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  // Logout handler
+  const handleLogout = () => {
+    // Remove token and role from localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    // Optionally, clear other user data here
+
+    // Redirect to login page
+    navigate('/login');
+  };
+
   return (
     <div>
       <nav className="bg-white shadow w-full z-1 relative">
@@ -55,13 +69,14 @@ const DashboardNavbar = () => {
                       >
                         Settings
                       </a>
-                      <a
-                        href="/logout"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         role="menuitem"
+                        type="button"
                       >
                         Logout
-                      </a>
+                      </button>
                     </div>
                   </div>
                 )}
