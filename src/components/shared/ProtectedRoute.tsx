@@ -6,7 +6,7 @@ export const ProtectedRoute = ({
   allowedRoles,
 }: {
   element: React.ReactElement;
-  allowedRoles: ('host' | 'admin')[];
+  allowedRoles: ('host' | 'admin' | 'user')[];
 }) => {
   const { isAuthenticated, user } = useAuth();
 
@@ -14,7 +14,7 @@ export const ProtectedRoute = ({
     return <Navigate to="/login" replace />;
   }
 
-  if (!allowedRoles.includes(user.role)) {
+  if (!allowedRoles.includes(user.role as 'host' | 'admin' | 'user')) {
     return <Navigate to="/dashboard" replace />;
   }
 

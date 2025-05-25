@@ -48,7 +48,7 @@ function App() {
           element={
             <ProtectedRoute
               element={<DashboardLayout />}
-              allowedRoles={['host', 'admin']}
+              allowedRoles={['host', 'admin', 'user']}
             />
           }
         >

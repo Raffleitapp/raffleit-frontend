@@ -17,9 +17,10 @@ export const Login = () => {
         email: emailInput?.value,
         password: passwordInput?.value,
       });
+      console.log('Login response:', response.data);
 
-      const { token, role } = response.data; // Expect token and role ('host' or 'admin') from API
-      login(role); // Update auth context with role
+      const { token, role } = response.data;
+      login(role);
       localStorage.setItem('token', token); // Store token
       localStorage.setItem('role', role); // Store role
       navigate('/dashboard'); // Redirect to dashboard
