@@ -1,6 +1,6 @@
 import { Dices, LayoutDashboard, LogOut, Settings, Ticket, User, Users, Menu, X } from "lucide-react";
 import { useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -17,11 +17,19 @@ const sidebarItems = [
 export const Sidebar = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
 
     const handleMenuClick = () => {
         if (window.innerWidth < 768) {
             setIsSidebarOpen(false);
         }
+    };
+
+    // Logout handler
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        navigate('/login');
     };
 
     return (
@@ -43,22 +51,35 @@ export const Sidebar = () => {
                 <ul className="list-none">
                     {sidebarItems.map(({ icon: Icon, label, href }, index) => {
                         const isActive = location.pathname === href;
-                        return (
-                            <li
-                                key={index}
-                                className={`mb-2 mt-2 gap-2 flex items-center p-2 rounded-md transition-colors duration-200 group ${isActive ? "bg-white text-blue-900" : "hover:bg-white hover:text-blue-900"}`}
-                            >
-                                <Icon className={`${isActive ? "text-blue-900" : "text-white"} group-hover:text-blue-900`} size={18} />
-                                <Link
-                                    to={href}
-                                    className="flex items-center"
-                                    onClick={handleMenuClick}
+                        if (label === "Logout") {
+                            return (
+                                <li
+                                    key={index}
+                                    className="mb-2 mt-2 gap-2 flex items-center p-2 rounded-md transition-colors duration-200 group hover:bg-white hover:text-blue-900 cursor-pointer"
+                                    onClick={() => {
+                                        handleMenuClick();
+                                        handleLogout();
+                                    }}
                                 >
-                                    <span className={`md:inline-block ml-2 ${isActive ? "text-blue-900" : "text-white"} group-hover:text-blue-900`}>
+                                    <Icon className="text-white group-hover:text-blue-900" size={18} />
+                                    <span className="md:inline-block ml-2 text-white group-hover:text-blue-900">
                                         {label}
                                     </span>
-                                </Link>
-                            </li>
+                                </li>
+                            );
+                        }
+                        return (
+                            <Link
+                                key={index}
+                                to={href}
+                                className={`mb-2 mt-2 gap-2 flex items-center p-2 rounded-md transition-colors duration-200 group ${isActive ? "bg-white text-blue-900" : "hover:bg-white hover:text-blue-900"}`}
+                                onClick={handleMenuClick}
+                            >
+                                <Icon className={`${isActive ? "text-blue-900" : "text-white"} group-hover:text-blue-900`} size={18} />
+                                <span className={`md:inline-block ml-2 ${isActive ? "text-blue-900" : "text-white"} group-hover:text-blue-900`}>
+                                    {label}
+                                </span>
+                            </Link>
                         );
                     })}
                 </ul>

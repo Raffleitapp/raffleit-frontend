@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from 'axios'; // Import AxiosError for more specific typing
 import { useAuth } from '../../context/authUtils';
 import { API_BASE_URL } from '../../constants/constants';
 
 export const Register = () => {
-  const { login } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
+  const [first_name, setFirstName] = useState('');
+  const [last_name, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState<'user' | 'host'>('user');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,26 +29,46 @@ export const Register = () => {
 
     try {
       const response = await axios.post(`${API_BASE_URL}/api/register`, {
+        first_name,
+        last_name,
         email,
         password,
+        password_confirmation: confirmPassword,
+        role,
       });
 
-      const { token, role } = response.data; // Expect token and role='host' from API
-      if (role !== 'host') {
-        throw new Error('Invalid role assigned');
+      const { token, role: returnedRole } = response.data || {};
+      if (token && returnedRole) {
+        register(returnedRole);
+        localStorage.setItem('token', token);
+        localStorage.setItem('role', returnedRole);
+        navigate('/dashboard');
+      } else {
+        setError('Registration failed. Please try again.');
       }
-      login(role); // Update auth context with role
-      localStorage.setItem('token', token); // Store token
-      localStorage.setItem('role', role); // Store role
-      navigate('/dashboard'); // Redirect to dashboard
-    } catch (error) {
+    } catch (error: unknown) { // Changed from 'any' to 'unknown'
       console.error('Registration failed:', error);
-      setError('Registration failed. Email may already exist.');
+
+      if (axios.isAxiosError(error)) { // Use axios.isAxiosError for type narrowing
+        // Now 'error' is safely typed as AxiosError
+        if (error.response && error.response.data && (error.response.data as { message?: string }).message) {
+          setError((error.response.data as { message?: string }).message!); // Assert message exists if you're sure
+        } else {
+          setError('Registration failed. Please try again.');
+        }
+      } else if (error instanceof Error) {
+        // Handle other general JavaScript errors
+        setError(error.message);
+      } else {
+        // Fallback for truly unexpected error types
+        setError('An unexpected error occurred.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ... rest of your component remains the same
   return (
     <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
@@ -57,6 +80,79 @@ export const Register = () => {
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
         <div className="rounded-lg bg-white shadow-md p-4">
           <form onSubmit={handleRegister} className="space-y-6">
+            <div>
+              <label
+                htmlFor="first_name"
+                className="block text-sm/6 font-medium text-gray-900"
+              >
+                First Name
+              </label>
+              <div className="mt-2">
+                <input
+                  id="first_name"
+                  name="first_name"
+                  type="text"
+                  required
+                  value={first_name}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="last_name"
+                className="block text-sm/6 font-medium text-gray-900"
+              >
+                Last Name
+              </label>
+              <div className="mt-2">
+                <input
+                  id="last_name"
+                  name="last_name"
+                  type="text"
+                  required
+                  value={last_name}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="role"
+                className="block text-sm font-medium text-gray-900 mb-2"
+              >
+                Register as
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="user"
+                    checked={role === 'user'}
+                    onChange={() => setRole('user')}
+                    className="accent-indigo-600"
+                  />
+                  <span className="ml-2 text-gray-700">User</span>
+                </label>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="host"
+                    checked={role === 'host'}
+                    onChange={() => setRole('host')}
+                    className="accent-indigo-600"
+                  />
+                  <span className="ml-2 text-gray-700">Host</span>
+                </label>
+              </div>
+            </div>
+
             <div>
               <label
                 htmlFor="email"

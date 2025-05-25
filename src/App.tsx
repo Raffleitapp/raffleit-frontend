@@ -19,6 +19,7 @@ import Users from './pages/dashboard/Users';
 import NotFound from './pages/NotFound';
 import Settings from './pages/dashboard/Settings';
 import Tickets from './pages/dashboard/Tickets';
+import { useAuth } from './context/authUtils';
 
 function PublicLayout() {
   const location = useLocation();
@@ -86,13 +87,31 @@ function DashboardLayoutRoutes() {
   );
 }
 
+// ProtectedRoute component
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    // Redirect to login if not authenticated
+    return <Login />;
+  }
+
+  return <>{children}</>;
+}
+
 function App() {
   const location = useLocation();
   const isDashboardRoute = location.pathname.startsWith('/dashboard');
 
   return (
     <div className="App">
-      {isDashboardRoute ? <DashboardLayoutRoutes /> : <PublicLayout />}
+      {isDashboardRoute ? (
+        <ProtectedRoute>
+          <DashboardLayoutRoutes />
+        </ProtectedRoute>
+      ) : (
+        <PublicLayout />
+      )}
     </div>
   );
 }
@@ -108,4 +127,3 @@ const AppWrapper = () => {
 }
 
 export default AppWrapper;
-
