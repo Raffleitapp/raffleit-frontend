@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Hero } from "../components/shared/Hero";
+import { Hero } from "../components/main/Hero";
 
 export const Raffles = () => {
     const [searchTerm, setSearchTerm] = useState("");
