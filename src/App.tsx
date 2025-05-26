@@ -1,5 +1,7 @@
 import './App.css';
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, ReactNode } from 'react'; // Import ReactNode
+
 import { Footer } from './components/main/Footer';
 import Navbar from './components/main/Navbar';
 import { AuthProvider } from './context/AuthContext';
@@ -14,7 +16,10 @@ import { AdminDashboard } from './pages/dashboard/AdminDashboard';
 import CompletedRaffles from './pages/dashboard/CompletedRaffles';
 import LiveRaffles from './pages/dashboard/LiveRaffles';
 import Category from './pages/dashboard/Category';
+import Analytics from './pages/dashboard/Analytics';
+import { DashboardHome } from './pages/dashboard/DashboardHome';
 import Profile from './pages/dashboard/Profile';
+import Reports from './pages/dashboard/Reports';
 import Users from './pages/dashboard/Users';
 import NotFound from './pages/NotFound';
 import Settings from './pages/dashboard/Settings';
@@ -24,7 +29,6 @@ import { useAuth } from './context/authUtils';
 function PublicLayout() {
   const location = useLocation();
 
-  // Define valid public routes where Navbar and Footer should be shown
   const validPublicRoutes = [
     '/',
     '/about',
@@ -33,12 +37,10 @@ function PublicLayout() {
     '/raffles',
   ];
 
-  // Check if the route is valid or matches a dynamic raffle route (e.g., /raffles/:id)
   const isValidRoute =
     validPublicRoutes.includes(location.pathname) ||
     /^\/raffles\/[^/]+$/.test(location.pathname);
 
-  // Explicitly exclude /login and /register from showing Navbar and Footer
   const showLayout = isValidRoute && !['/login', '/register'].includes(location.pathname);
 
   return (
@@ -64,39 +66,50 @@ function DashboardLayoutRoutes() {
   return (
     <Routes>
       <Route path="/dashboard" element={<AdminDashboard />}>
-        <Route path="/dashboard/completed-raffles" element={<CompletedRaffles />} />
-        <Route path="/dashboard/raffles" element={<Raffles />} />
-        <Route path="/dashboard/raffles/:id" element={<Raffles />} />
-        <Route path="/dashboard/raffles/:id/edit" element={<Raffles />} />
-        <Route path="/dashboard/raffles/:id/view" element={<Raffles />} />
-        <Route path="/dashboard/raffles/:id/winners" element={<Raffles />} />
-        <Route path="/dashboard/raffles/:id/entries" element={<Raffles />} />
-        <Route path="/dashboard/raffles/:id/entries/:entryId" element={<Raffles />} />
-        <Route path="/dashboard/live-raffles" element={<LiveRaffles />} />
-        <Route path="/dashboard/category" element={<Category />} />
-        <Route path="/dashboard/category/:id" element={<Category />} />
-        <Route path="/dashboard/category/:id/edit" element={<Category />} />
-        <Route path="/dashboard/category/:id/view" element={<Category />} />
-        <Route path="/dashboard/profile" element={<Profile />} />
-        <Route path="/dashboard/users" element={<Users />} />
-        <Route path="/dashboard/settings" element={<Settings />} />
-        <Route path="/dashboard/tickets" element={<Tickets />} />
+        <Route index element={<DashboardHome />} />
+        <Route path="completed-raffles" element={<CompletedRaffles />} />
+        <Route path="live-raffles" element={<LiveRaffles />} />
+        <Route path="analytics" element={<Analytics />} />
+        <Route path="category" element={<Category />} />
+        <Route path="category/:id" element={<Category />} />
+        <Route path="category/:id/edit" element={<Category />} />
+        <Route path="category/:id/view" element={<Category />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="users" element={<Users />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="tickets" element={<Tickets />} />
+        <Route path="raffles" element={<Raffles />} />
+        <Route path="raffles/:id" element={<Raffles />} />
+        <Route path="raffles/:id/edit" element={<Raffles />} />
+        <Route path="raffles/:id/view" element={<Raffles />} />
+        <Route path="raffles/:id/winners" element={<Raffles />} />
+        <Route path="raffles/:id/entries" element={<Raffles />} />
+        <Route path="raffles/:id/entries/:entryId" element={<Raffles />} />
         <Route path="*" element={<NotFound />} />
       </Route>
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
 
-// ProtectedRoute component
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+// Define the props interface for ProtectedRoute
+interface ProtectedRouteProps {
+  children: ReactNode;
+}
+
+// Apply the props interface to ProtectedRoute
+function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
-  if (!isAuthenticated) {
-    // Redirect to login if not authenticated
-    return <Login />;
-  }
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
-  return <>{children}</>;
+  return isAuthenticated ? <>{children}</> : null;
 }
 
 function App() {

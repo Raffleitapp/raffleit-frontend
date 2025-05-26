@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // Import AxiosError for more specific typing
+import axios from 'axios';
 import { useAuth } from '../../context/authUtils';
 import { API_BASE_URL } from '../../constants/constants';
 
 export const Register = () => {
-  const { register } = useAuth();
+  const { register } = useAuth(); // Assuming 'register' function is part of useAuth
   const navigate = useNavigate();
   const [first_name, setFirstName] = useState('');
   const [last_name, setLastName] = useState('');
@@ -39,28 +39,27 @@ export const Register = () => {
 
       const { token, role: returnedRole } = response.data || {};
       if (token && returnedRole) {
-        register(returnedRole);
+        // Corrected: Pass both token and role to the register function
+        // You might need to adjust this based on the exact signature of your register function in authUtils.ts
+        register(token, returnedRole);
         localStorage.setItem('token', token);
         localStorage.setItem('role', returnedRole);
         navigate('/dashboard');
       } else {
         setError('Registration failed. Please try again.');
       }
-    } catch (error: unknown) { // Changed from 'any' to 'unknown'
+    } catch (error: unknown) {
       console.error('Registration failed:', error);
 
-      if (axios.isAxiosError(error)) { // Use axios.isAxiosError for type narrowing
-        // Now 'error' is safely typed as AxiosError
+      if (axios.isAxiosError(error)) {
         if (error.response && error.response.data && (error.response.data as { message?: string }).message) {
-          setError((error.response.data as { message?: string }).message!); // Assert message exists if you're sure
+          setError((error.response.data as { message?: string }).message!);
         } else {
           setError('Registration failed. Please try again.');
         }
       } else if (error instanceof Error) {
-        // Handle other general JavaScript errors
         setError(error.message);
       } else {
-        // Fallback for truly unexpected error types
         setError('An unexpected error occurred.');
       }
     } finally {
@@ -68,7 +67,6 @@ export const Register = () => {
     }
   };
 
-  // ... rest of your component remains the same
   return (
     <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
