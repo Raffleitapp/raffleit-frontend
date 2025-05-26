@@ -4,7 +4,8 @@ import { useState } from 'react';
 
 const CompletedRaffles = () => {
   // Dummy data for completed raffles (replace with actual data fetched from your API)
-  const [completedRaffles, setCompletedRaffles] = useState([
+  // const [completedRaffles, setCompletedRaffles] = useState([
+  const [completedRaffles] = useState([
     {
       id: 'raffle-001',
       title: 'Luxury Watch Giveaway',
