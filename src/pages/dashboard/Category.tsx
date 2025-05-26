@@ -163,7 +163,7 @@ const Category = () => {
             <input
               type="text"
               id="categoryName"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 px-3 py-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
               placeholder="e.g., Electronics, Vehicles"
