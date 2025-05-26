@@ -1,36 +1,64 @@
-import { ReactNode, useState } from 'react';
-import { AuthContext } from './authUtils';
+import { ReactNode, useState, useEffect } from 'react';
+import { AuthContext, User, AuthContextType } from './authUtils';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const storedUserData = localStorage.getItem('user_data');
+      if (storedUserData) {
+        return JSON.parse(storedUserData) as User;
+      }
+    } catch (e) {
+      console.error("Failed to parse user data from localStorage:", e);
+      localStorage.removeItem('user_data');
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+    }
+    return null;
+  });
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
     !!localStorage.getItem('token')
   );
-  const [user, setUser] = useState<{ role: 'user' | 'host' | 'admin' | null }>({
-    role: localStorage.getItem('role') as 'user' | 'host' | 'admin' | null,
-  });
 
-  const login = (role: 'user' | 'host' | 'admin') => {
+  useEffect(() => {
+    setIsAuthenticated(!!user && !!localStorage.getItem('token'));
+  }, [user]);
+
+  const login = (token: string, userData: User) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user_data', JSON.stringify(userData));
+    localStorage.setItem('role', userData.role);
+    setUser(userData);
     setIsAuthenticated(true);
-    setUser({ role });
   };
 
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
+    localStorage.removeItem('user_data');
     setIsAuthenticated(false);
-    setUser({ role: null });
+    setUser(null);
   };
 
-  const register = (role: 'user' | 'host' | 'admin') => {
-    // Example: set token and role in localStorage, then authenticate
-    localStorage.setItem('token', 'dummy-token');
-    localStorage.setItem('role', role);
+  const register = (token: string, userData: User) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user_data', JSON.stringify(userData));
+    localStorage.setItem('role', userData.role);
+    setUser(userData);
     setIsAuthenticated(true);
-    setUser({ role });
+  };
+
+  const contextValue: AuthContextType = {
+    isAuthenticated,
+    user,
+    login,
+    logout,
+    register,
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, register }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

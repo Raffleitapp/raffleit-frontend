@@ -1,11 +1,19 @@
 import { createContext, useContext } from 'react';
 
+export interface User {
+  user_id: string | number;
+  first_name?: string;
+  last_name?: string;
+  email: string;
+  role: 'user' | 'host' | 'admin';
+}
+
 export interface AuthContextType {
   isAuthenticated: boolean;
-  user: { role: 'user' | 'host' | 'admin' | null };
-  login: (role: 'user' | 'host' | 'admin') => void;
+  user: User | null;
+  login: (token: string, userData: User) => void;
   logout: () => void;
-  register: (role: 'user' | 'host' | 'admin') => void;
+  register: (token: string, userData: User) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

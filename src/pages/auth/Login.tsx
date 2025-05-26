@@ -2,12 +2,12 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/authUtils';
 import { API_BASE_URL } from '../../constants/constants';
+import { User } from '../../context/authUtils';
 
 export const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // Function to handle login
   const handleLogin = async () => {
     try {
       const emailInput = document.getElementById('email') as HTMLInputElement;
@@ -19,14 +19,22 @@ export const Login = () => {
       });
       console.log('Login response:', response.data);
 
-      const { token, role } = response.data;
-      login(role);
-      localStorage.setItem('token', token); // Store token
-      localStorage.setItem('role', role); // Store role
-      navigate('/dashboard'); // Redirect to dashboard
+      const { token, ...userDataFromApi } = response.data; // Destructure token, rest is user data
+
+      const userToStore: User = {
+          user_id: userDataFromApi.user_id, // Map user_id from API to user_id in interface
+          first_name: userDataFromApi.first_name,
+          last_name: userDataFromApi.last_name,
+          email: userDataFromApi.email,
+          role: userDataFromApi.role
+      };
+
+      login(token, userToStore);
+
+      navigate('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
-      throw error; // Let button handler show error
+      throw error;
     }
   };
 
@@ -105,8 +113,7 @@ export const Login = () => {
                     try {
                       await handleLogin();
                     } catch {
-                      // Show error (e.g., alert or UI element)
-                      alert('Login failed. Please check your email or password.');
+                      console.log('Login failed. Please check your email or password.');
                     } finally {
                       if (button) {
                         button.innerHTML = 'Sign in';
