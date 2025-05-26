@@ -1,18 +1,17 @@
 import { useState, useEffect } from 'react';
-// import axios from 'axios'; // You'll use this for real API calls
-// import { API_BASE_URL } from '../../constants/constants'; // Your API base URL
-import { useAuth } from '../../context/authUtils'; // To get the current authenticated user
+// import axios from 'axios';
+// import { API_BASE_URL } from '../../constants/constants';
+import { useAuth } from '../../context/authUtils';
 
-// This interface should ideally be consistent with your User interface in authUtils.ts
-// but including it here for clarity on what this component expects.
+// Corrected interface:
 interface UserProfile {
   user_id: string | number;
   first_name: string;
   last_name: string;
   email: string;
   role: 'user' | 'host' | 'admin';
-  phone_number?: string;
-  address?: string;
+  phone_number?: string | null; // Changed to allow string, undefined, or null
+  address?: string | null;     // Changed to allow string, undefined, or null
   raffles_entered?: number;
   tickets_purchased?: number;
   raffles_won?: number;
@@ -21,7 +20,7 @@ interface UserProfile {
 }
 
 const Profile = () => {
-  const { user, isAuthenticated } = useAuth(); // Get the authenticated user from your context
+  const { user, isAuthenticated } = useAuth();
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,34 +36,27 @@ const Profile = () => {
       setLoading(true);
       setError(null);
 
-      // Simulate API call to fetch detailed user profile data
       try {
-        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 800));
 
-        // Mock data based on the logged-in user
-        // In a real app, you'd fetch this from your backend (e.g., /api/user/profile)
         const mockUserProfile: UserProfile = {
-          user_id: user.user_id, // Use the ID from the authenticated user
+          user_id: user.user_id,
           first_name: user.first_name || 'N/A',
           last_name: user.last_name || 'N/A',
           email: user.email,
           role: user.role,
+          // Now 'null' is explicitly allowed by the interface
           phone_number: user.role === 'admin' ? '+1234567890' : (user.role === 'host' ? '+1987654321' : null),
           address: user.role === 'admin' ? '123 Admin St, City, Country' : (user.role === 'host' ? '456 Host Ave, Town, Country' : null),
           raffles_entered: 15,
           tickets_purchased: 42,
           raffles_won: 3,
-          profile_picture_url: 'https://via.placeholder.com/150/7f8c8d/ffffff?text=User', // Generic placeholder
+          profile_picture_url: 'https://via.placeholder.com/150/7f8c8d/ffffff?text=User',
           registration_date: '2023-01-15',
         };
 
         setProfileData(mockUserProfile);
 
-        // In a real app:
-        // const response = await axios.get(`${API_BASE_URL}/api/user/profile`, {
-        //   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        // });
-        // setProfileData(response.data.profile); // Adjust based on your API response structure
       } catch (err) {
         console.error("Failed to fetch profile data:", err);
         setError("Failed to load profile data. Please try again later.");
@@ -74,7 +66,9 @@ const Profile = () => {
     };
 
     fetchProfileData();
-  }, [isAuthenticated, user]); // Re-fetch if authentication status or user changes
+  }, [isAuthenticated, user]);
+
+  // ... rest of your component remains the same ...
 
   if (loading) {
     return (
