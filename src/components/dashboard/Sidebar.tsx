@@ -18,8 +18,8 @@ const sidebarItems = [
     { icon: ChartNoAxesCombined, label: "Analytics", href: "/dashboard/analytics", roles: [USER_ROLES.ADMIN] },
     { icon: FileChartColumn, label: "Reports", href: "/dashboard/reports", roles: [USER_ROLES.ADMIN] },
     { icon: Users, label: "Users", href: "/dashboard/users", roles: [USER_ROLES.ADMIN] },
-    { icon: Settings, label: "Settings", href: "/dashboard/settings", roles: [USER_ROLES.ADMIN] },
-    { icon: User, label: "Profile", href: "/dashboard/profile", roles: [USER_ROLES.ADMIN, USER_ROLES.USER] },
+    { icon: Settings, label: "Settings", href: "/dashboard/settings", roles: [USER_ROLES.ADMIN, USER_ROLES.HOST, USER_ROLES.USER] },
+    { icon: User, label: "Profile", href: "/dashboard/profile", roles: [USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.HOST] },
     { icon: LogOut, label: "Logout", href: "#logout", roles: [USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.HOST] },
 ];
 
