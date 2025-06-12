@@ -70,7 +70,7 @@ export const Home = () => {
         <div className="container mx-auto flex items-center flex-col md:flex-row justify-items-center gap-4 py-4 px-4">
           <div className="flex flex-col items-start justify-center w-full md:w-7/10">
             <h1 className="text-4xl md:text-5xl font-semibold text-btn-primary">How <span className="text-white font-bold">raffleit</span> attracts individual</h1>
-            <p className="text-base text-white mt-4">RaffleItApp connects your raffle to persons and donors outside of your community so they can take part in the raffle or donate remotely to your cause. Revolutionize raffles and fundraising!</p>
+            <p className="text-base text-white mt-4">Funditzone connects your raffle to persons and donors outside of your community so they can take part in the raffle or donate remotely to your cause. Revolutionize raffles and fundraising!</p>
           </div>
           <div className="mx-auto">
             <img src="./images/online-connect.png" alt="" className="w-30 h-auto md:h-auto md:w-auto connect" />

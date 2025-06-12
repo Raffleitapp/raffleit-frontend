@@ -13,7 +13,7 @@ export const Testimonials = () => {
                         <div className="relative">
                             <span className="absolute top-0 left-0 text-4xl text-btn-primary font-bold">“</span>
                         </div>
-                        <p className="py-2 px-2 text-gray-500 italic">"RaffleItApp made fundraising so easy and effective for our organization. We reached donors we never thought possible!"</p>
+                        <p className="py-2 px-2 text-gray-500 italic">"Funditzone made fundraising so easy and effective for our organization. We reached donors we never thought possible!"</p>
                         <div className="flex items-center mt-4">
                             <span className="text-yellow-500">★★★★★</span>
                         </div>
@@ -23,7 +23,7 @@ export const Testimonials = () => {
                         <div className="relative">
                             <span className="absolute top-0 left-0 text-4xl text-btn-primary font-bold">“</span>
                         </div>
-                        <p className="py-2 px-2 text-gray-500 italic">"Sharing our raffle was seamless, and the support we received was incredible. Highly recommend RaffleItApp!"</p>
+                        <p className="py-2 px-2 text-gray-500 italic">"Sharing our raffle was seamless, and the support we received was incredible. Highly recommend Funditzone!"</p>
                         <div className="flex items-center mt-4">
                             <span className="text-yellow-500">★★★★★</span>
                         </div>
@@ -33,7 +33,7 @@ export const Testimonials = () => {
                         <div className="relative">
                             <span className="absolute top-0 left-0 text-4xl text-btn-primary font-bold">“</span>
                         </div>
-                        <p className="py-2 px-2 text-gray-500 italic">"Watching our donations grow in real-time was a game-changer. RaffleItApp is the future of fundraising!"</p>
+                        <p className="py-2 px-2 text-gray-500 italic">"Watching our donations grow in real-time was a game-changer. Funditzone is the future of fundraising!"</p>
                         <div className="flex items-center mt-4">
                             <span className="text-yellow-500">★★★★★</span>
                         </div>

@@ -5,7 +5,7 @@ export const Started = () => {
         <div className="container mx-auto py-4 px-4">
             <div className="text-center md:mt-10 mt-10 mb-4 w-full md:w-70/100 mx-auto">
                 <h2 className="text-2xl font-bold mb-4">Get Started Today!</h2>
-                <p className="text-base">RaffleItApp connects your raffle to persons and donors outside of your community so they can take part in the raffle or donate remotely to your cause. Revolutionize raffles and fundraising!</p>
+                <p className="text-base">Funditzone connects your raffle to persons and donors outside of your community so they can take part in the raffle or donate remotely to your cause. Revolutionize raffles and fundraising!</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 justify-items-center gap-4">
                 <div className="col-span-1 shadow-lg rounded-xl w-full px-4 py-4 mt-4 mb-4">
