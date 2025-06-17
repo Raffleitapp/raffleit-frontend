@@ -21,7 +21,7 @@ export const About = () => {
             <h2 className="text-xl md:text-2xl font-bold">About Us</h2>
             <h3 className="text-base md:text-xl font-semibold">RafleIt has several benefits</h3>
 
-            <p className="py-2">RaffleItApp was created with the idea that everyone can Do Good and Have Fun, and it aims to revolutionise the raffle platform for the twenty-first century by making it easier for anybody to operate a raffle from the comfort of their homes and places of employment.</p>
+            <p className="py-2">Funditzone was created with the idea that everyone can Do Good and Have Fun, and it aims to revolutionise the raffle platform for the twenty-first century by making it easier for anybody to operate a raffle from the comfort of their homes and places of employment.</p>
 
             <p className="py-2">Through the power of mobile connectivity, our internet platform connects people, businesses, organisations, clubs, charities, and more with a practically infinite audience. This provides everyone with an exciting option to make a difference, along with an accessible interface, to provide an engaging raffle experience both on and off-site.</p>
 
