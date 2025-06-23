@@ -76,7 +76,7 @@ const Users = () => {
     };
 
     fetchUsers();
-  }, [isAuthenticated, currentUser]);
+  }, [isAuthenticated, currentUser, token]);
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||

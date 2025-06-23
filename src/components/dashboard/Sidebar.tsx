@@ -39,7 +39,7 @@ export const Sidebar = () => {
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
-        navigate('/login');
+        navigate('/'); // Redirect to home page after logout
     };
 
     const filteredSidebarItems = sidebarItems.filter(item =>

@@ -25,6 +25,14 @@ export const Raffles = () => {
   const [raffles, setRaffles] = useState<Raffle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newRaffle, setNewRaffle] = useState({
+    title: "",
+    description: "",
+    startDate: "",
+    endDate: "",
+    // Add other fields as needed
+  });
   const itemsPerPage = 3;
 
   useEffect(() => {
@@ -71,6 +79,25 @@ export const Raffles = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleCreateRaffle = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/raffles`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(newRaffle),
+      });
+      if (!res.ok) throw new Error("Failed to create raffle");
+      setShowCreateModal(false);
+      // Optionally, refresh raffles list
+    } catch {
+      alert("Failed to create raffle.");
+    }
   };
 
   if (loading) return <div>Loading raffles...</div>;
@@ -166,6 +193,60 @@ export const Raffles = () => {
                 </button>
               ))}
             </div>
+            <div className="flex justify-end mb-4">
+              <button
+                className="px-6 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700"
+                onClick={() => setShowCreateModal(true)}
+              >
+                Create Raffle
+              </button>
+            </div>
+            {showCreateModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
+                  <h2 className="text-xl font-bold mb-4">Create New Raffle</h2>
+                  <input
+                    className="w-full mb-2 p-2 border rounded"
+                    placeholder="Title"
+                    value={newRaffle.title}
+                    onChange={e => setNewRaffle({ ...newRaffle, title: e.target.value })}
+                  />
+                  <textarea
+                    className="w-full mb-2 p-2 border rounded"
+                    placeholder="Description"
+                    value={newRaffle.description}
+                    onChange={e => setNewRaffle({ ...newRaffle, description: e.target.value })}
+                  />
+                  <input
+                    type="date"
+                    className="w-full mb-2 p-2 border rounded"
+                    value={newRaffle.startDate}
+                    onChange={e => setNewRaffle({ ...newRaffle, startDate: e.target.value })}
+                  />
+                  <input
+                    type="date"
+                    className="w-full mb-2 p-2 border rounded"
+                    value={newRaffle.endDate}
+                    onChange={e => setNewRaffle({ ...newRaffle, endDate: e.target.value })}
+                  />
+                  {/* Add more fields as needed */}
+                  <div className="flex justify-end gap-2">
+                    <button
+                      className="px-4 py-2 bg-gray-300 rounded"
+                      onClick={() => setShowCreateModal(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="px-4 py-2 bg-blue-600 text-white rounded"
+                      onClick={handleCreateRaffle}
+                    >
+                      Create
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

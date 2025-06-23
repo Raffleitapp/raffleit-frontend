@@ -31,7 +31,8 @@ export const Login = () => {
 
       login(token, userToStore);
 
-      navigate('/dashboard');
+      // navigate('/dashboard'); // REMOVE or COMMENT OUT this line
+      navigate('/'); // Redirect to home page after login
     } catch (error) {
       console.error('Login failed:', error);
       throw error;

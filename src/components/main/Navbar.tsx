@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const navigate = useNavigate();
+    const isAuthenticated = !!localStorage.getItem('token');
 
     const menuItems = [
         { label: "Home", href: "/" },
@@ -32,12 +35,24 @@ const Navbar = () => {
 
                 <div className="hidden md:flex items-center space-x-4">
                     {/* Desktop Buttons */}
-                    <a href="/register" className="bg-btn-primary hover:bg-btn-secondary text-white font-bold py-2 px-4 rounded text-center">
-                        Sign Up
-                    </a>
-                    <a href="/login" className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded text-center">
-                        Sign In
-                    </a>
+                    {!isAuthenticated && (
+                        <>
+                            <a href="/register" className="bg-btn-primary hover:bg-btn-secondary text-white font-bold py-2 px-4 rounded text-center">
+                                Sign Up
+                            </a>
+                            <a href="/login" className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded text-center">
+                                Sign In
+                            </a>
+                        </>
+                    )}
+                    {isAuthenticated && (
+                        <button
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-center"
+                            onClick={() => navigate('/dashboard')}
+                        >
+                            Go to Dashboard
+                        </button>
+                    )}
                 </div>
 
                 {/* Mobile Menu Button */}
