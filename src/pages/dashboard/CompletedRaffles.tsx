@@ -1,72 +1,105 @@
-import { useState } from 'react';
-// You might have a dedicated component for a single raffle card, e.g., RaffleCard
-// import RaffleCard from './RaffleCard';
+import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../constants/constants';
+
+interface CompletedRaffle {
+  id: number;
+  title: string;
+  prize: string;
+  winner: string;
+  totalTickets: number;
+  ticketsSold: number;
+  drawDate: string;
+  imageUrl: string;
+}
 
 const CompletedRaffles = () => {
-  // Dummy data for completed raffles (replace with actual data fetched from your API)
-  // const [completedRaffles, setCompletedRaffles] = useState([
-  const [completedRaffles] = useState([
-    {
-      id: 'raffle-001',
-      title: 'Luxury Watch Giveaway',
-      prize: 'Rolex Submariner',
-      winner: 'Alice Smith',
-      totalTickets: 500,
-      ticketsSold: 480,
-      drawDate: '2024-05-20',
-      imageUrl: 'https://via.placeholder.com/150/0000FF/FFFFFF?text=Watch', // Placeholder image
-    },
-    {
-      id: 'raffle-002',
-      title: 'Gaming PC Bundle',
-      prize: 'High-End Gaming Rig + Peripherals',
-      winner: 'Bob Johnson',
-      totalTickets: 300,
-      ticketsSold: 300,
-      drawDate: '2024-05-15',
-      imageUrl: 'https://via.placeholder.com/150/FF0000/FFFFFF?text=Gaming+PC',
-    },
-    {
-      id: 'raffle-003',
-      title: 'Tropical Island Vacation',
-      prize: '7-Day Trip for Two to Bali',
-      winner: 'Charlie Brown',
-      totalTickets: 200,
-      ticketsSold: 180,
-      drawDate: '2024-05-10',
-      imageUrl: 'https://via.placeholder.com/150/00FF00/FFFFFF?text=Vacation',
-    },
-    {
-        id: 'raffle-004',
-        title: 'New Smartphone',
-        prize: 'iPhone 15 Pro Max',
-        winner: 'David Lee',
-        totalTickets: 400,
-        ticketsSold: 390,
-        drawDate: '2024-05-05',
-        imageUrl: 'https://via.placeholder.com/150/FFFF00/000000?text=Phone',
-    },
-  ]);
+  const [completedRaffles, setCompletedRaffles] = useState<CompletedRaffle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // In a real application, you'd fetch data here:
-  // useEffect(() => {
-  //   const fetchCompletedRaffles = async () => {
-  //     try {
-  //       const response = await fetch('/api/completed-raffles'); // Your API endpoint
-  //       const data = await response.json();
-  //       setCompletedRaffles(data);
-  //     } catch (error) {
-  //       console.error("Failed to fetch completed raffles:", error);
-  //     }
-  //   };
-  //   fetchCompletedRaffles();
-  // }, []);
+  useEffect(() => {
+    const fetchCompletedRaffles = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Fetch all raffles, then filter for completed ones
+        const res = await fetch(`${API_BASE_URL}/raffles`);
+        if (!res.ok) throw new Error('Failed to fetch raffles');
+        const data = await res.json();
+        const now = new Date();
+        // Filter for completed raffles (ending_date in the past and approved)
+        interface ApiRaffle {
+          id: number;
+          title?: string;
+          host_name?: string;
+          prize?: string;
+          description?: string;
+          winner_name?: string;
+          total_tickets?: number;
+          tickets_sold?: number;
+          ending_date: string;
+          approve_status: string;
+          image1?: string;
+        }
+
+        const completed = (data as ApiRaffle[]).filter((raffle) => {
+          return new Date(raffle.ending_date) <= now && raffle.approve_status === 'approved';
+        }).map((raffle) => ({
+          id: raffle.id,
+          title: raffle.title || raffle.host_name || 'Untitled Raffle',
+          prize: raffle.prize || raffle.description || 'No prize specified',
+          winner: raffle.winner_name || 'TBA',
+          totalTickets: raffle.total_tickets ?? 0,
+          ticketsSold: raffle.tickets_sold ?? 0,
+          drawDate: raffle.ending_date,
+          imageUrl: raffle.image1 || '/images/default.png',
+        }));
+        setCompletedRaffles(completed);
+      } catch {
+        setError('Failed to load completed raffles.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCompletedRaffles();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-6 bg-gray-100 min-h-screen flex items-center justify-center">
+        <div className="loader"></div> Loading Completed Raffles...
+        <style>{`
+          .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-gray-100 min-h-screen text-red-700 text-center text-lg">
+        Error: {error}
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-4xl font-extrabold mb-8 text-gray-900">Completed Raffles</h1>
       <p className="text-lg text-gray-700 mb-8">Review all raffles that have concluded and their winners.</p>
-
       {completedRaffles.length === 0 ? (
         <div className="bg-white p-6 rounded-lg shadow-md text-center">
           <p className="text-gray-600">No completed raffles to display yet.</p>
@@ -79,22 +112,16 @@ const CompletedRaffles = () => {
               <div className="p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">{raffle.title}</h2>
                 <p className="text-lg text-blue-700 mb-4 font-semibold">{raffle.prize}</p>
-                
                 <div className="mb-4">
                   <p className="text-gray-700 text-sm"><strong>Winner:</strong> <span className="font-semibold text-green-600">{raffle.winner}</span></p>
                   <p className="text-gray-700 text-sm"><strong>Draw Date:</strong> {raffle.drawDate}</p>
                 </div>
-
                 <div className="flex justify-between items-center text-sm text-gray-600">
                   <span>Tickets Sold: <span className="font-semibold">{raffle.ticketsSold}</span> / {raffle.totalTickets}</span>
                   {raffle.ticketsSold === raffle.totalTickets && (
                     <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">SOLD OUT</span>
                   )}
                 </div>
-                {/* You might add a "View Details" button here */}
-                {/* <button className="mt-4 w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700">
-                  View Details
-                </button> */}
               </div>
             </div>
           ))}

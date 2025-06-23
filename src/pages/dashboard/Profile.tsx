@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/authUtils';
+import { useNavigate } from 'react-router-dom';
 
 interface UserProfile {
   user_id: string | number;
@@ -21,6 +22,7 @@ const Profile = () => {
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -47,7 +49,7 @@ const Profile = () => {
           raffles_entered: 15,
           tickets_purchased: 42,
           raffles_won: 3,
-          profile_picture_url: 'https://via.placeholder.com/150/7f8c8d/ffffff?text=User',
+          profile_picture_url: '/images/tb2.png',
           registration_date: '2023-01-15',
         };
 
@@ -125,11 +127,14 @@ const Profile = () => {
       <div className="bg-white rounded-lg shadow-md p-8 mb-8 flex flex-col md:flex-row items-center md:items-start gap-8">
         <div className="flex-shrink-0">
           <img
-            src={profileData.profile_picture_url || 'https://via.placeholder.com/150/7f8c8d/ffffff?text=User'}
+            src={'/images/tb2.png'}
             alt="Profile"
             className="w-32 h-32 rounded-full object-cover border-4 border-blue-200 shadow-lg"
           />
-          <button className="mt-4 w-full px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300 transition-colors">
+          <button
+            className="mt-4 w-full px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300 transition-colors"
+            onClick={() => navigate('/dashboard/settings')}
+          >
             Change Photo
           </button>
         </div>
@@ -140,7 +145,7 @@ const Profile = () => {
           </h2>
           <p className="text-xl text-gray-600 mb-4">{profileData.email || 'no-email@example.com'}</p>
           <p className="text-md text-gray-700 mb-2">
-            **Role:** <span className={`font-semibold ${
+            Role: <span className={`font-semibold ${
               profileData.role === 'admin' ? 'text-purple-700' :
               profileData.role === 'host' ? 'text-orange-700' :
               'text-green-700'
@@ -149,19 +154,19 @@ const Profile = () => {
             </span>
           </p>
           {profileData.phone_number && (
-            <p className="text-md text-gray-700 mb-2">**Phone:** {profileData.phone_number}</p>
+            <p className="text-md text-gray-700 mb-2">Phone: {profileData.phone_number}</p>
           )}
           {profileData.address && (
-            <p className="text-md text-gray-700 mb-2">**Address:** {profileData.address}</p>
+            <p className="text-md text-gray-700 mb-2">Address: {profileData.address}</p>
           )}
           {profileData.registration_date && (
             <p className="text-md text-gray-700 mb-2">
-              **Member Since:** {new Date(profileData.registration_date).toLocaleDateString()}
+              Member Since: {new Date(profileData.registration_date).toLocaleDateString()}
             </p>
           )}
 
           <button
-            onClick={() => alert('Navigate to Settings or Profile Edit Page')}
+            onClick={() => navigate('/dashboard/settings')}
             className="mt-6 px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
           >
             Edit Profile
@@ -187,7 +192,7 @@ const Profile = () => {
         </div>
         <div className="mt-8 text-center">
             <button
-                onClick={() => alert('Navigate to My Tickets page')}
+                onClick={() => navigate('/dashboard/tickets')}
                 className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
             >
                 View My Tickets

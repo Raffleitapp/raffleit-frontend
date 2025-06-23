@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../constants/constants';
 
 // Define a type for a single live raffle
 interface LiveRaffle {
-  id: string;
+  id: number;
   title: string;
   prize: string;
   currentTickets: number;
@@ -23,58 +24,46 @@ const LiveRaffles = () => {
       setLoading(true);
       setError(null);
 
-      // Simulate API call
       try {
-        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
+        // Define a type for the API response if it differs from LiveRaffle
+        interface RaffleApiResponse {
+          id: number;
+          title?: string;
+          host_name?: string;
+          prize?: string;
+          description?: string;
+          tickets_sold?: number;
+          total_tickets?: number;
+          ending_date: string;
+          ticket_price?: number;
+          image1?: string;
+          category?: { category_name?: string };
+          approve_status?: string;
+        }
 
-        // Mock data for live raffles
-        const mockLiveRaffles: LiveRaffle[] = [
-          {
-            id: 'lr-001',
-            title: 'Dream Car Giveaway',
-            prize: 'Brand New Luxury Sedan',
-            currentTickets: 1500,
-            totalTickets: 5000,
-            endDate: '2025-06-15',
-            ticketPrice: 25.00,
-            imageUrl: 'https://via.placeholder.com/400x250/3498db/ffffff?text=Luxury+Car',
-            category: 'Vehicles',
-          },
-          {
-            id: 'lr-002',
-            title: 'Latest Gadget Bundle',
-            prize: 'High-End Laptop, Tablet & Smartwatch',
-            currentTickets: 320,
-            totalTickets: 1000,
-            endDate: '2025-05-30',
-            ticketPrice: 10.00,
-            imageUrl: 'https://via.placeholder.com/400x250/2ecc71/ffffff?text=Gadget+Bundle',
-            category: 'Electronics',
-          },
-          {
-            id: 'lr-003',
-            title: 'Exotic Holiday Package',
-            prize: '10-Day Trip to Maldives for Two',
-            currentTickets: 80,
-            totalTickets: 300,
-            endDate: '2025-07-01',
-            ticketPrice: 50.00,
-            imageUrl: 'https://via.placeholder.com/400x250/9b59b6/ffffff?text=Maldives+Trip',
-            category: 'Travel',
-          },
-          {
-            id: 'lr-004',
-            title: 'Next-Gen Gaming Console',
-            prize: 'PS5 Pro with 3 Games',
-            currentTickets: 600,
-            totalTickets: 1500,
-            endDate: '2025-06-20',
-            ticketPrice: 12.50,
-            imageUrl: 'https://via.placeholder.com/400x250/e74c3c/ffffff?text=Gaming+Console',
-            category: 'Electronics',
-          },
-        ];
-        setLiveRaffles(mockLiveRaffles);
+        // Fetch all raffles, then filter for live ones (you can adjust API to support status filter)
+        const res = await fetch(`${API_BASE_URL}/raffles`);
+        if (!res.ok) throw new Error('Failed to fetch raffles');
+        const data: RaffleApiResponse[] = await res.json();
+
+        // Filter for live raffles (assuming status or endDate logic)
+        const now = new Date();
+        const live = data.filter((raffle: RaffleApiResponse) => {
+          // Example: raffle.approve_status === 'approved' && new Date(raffle.ending_date) > now
+          return new Date(raffle.ending_date) > now && raffle.approve_status === 'approved';
+        }).map((raffle: RaffleApiResponse) => ({
+          id: raffle.id,
+          title: raffle.title || raffle.host_name || 'Untitled Raffle',
+          prize: raffle.prize || raffle.description || 'No prize specified',
+          currentTickets: raffle.tickets_sold ?? 0,
+          totalTickets: raffle.total_tickets ?? 0,
+          endDate: raffle.ending_date,
+          ticketPrice: raffle.ticket_price ?? 0,
+          imageUrl: raffle.image1 || '/images/default.png',
+          category: raffle.category?.category_name || 'N/A',
+        }));
+
+        setLiveRaffles(live);
       } catch (err) {
         console.error("Failed to fetch live raffles:", err);
         setError("Failed to load live raffles. Please try again later.");
@@ -141,18 +130,14 @@ const LiveRaffles = () => {
       {liveRaffles.length === 0 ? (
         <div className="bg-white p-6 rounded-lg shadow-md text-center">
           <p className="text-gray-600">No live raffles available at the moment.</p>
-          <button
-            onClick={() => alert('Maybe suggest checking back later or exploring past raffles.')}
-            className="mt-4 px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Refresh List
-          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {liveRaffles.map((raffle) => {
             const daysLeft = calculateDaysLeft(raffle.endDate);
-            const progress = (raffle.currentTickets / raffle.totalTickets) * 100;
+            const progress = raffle.totalTickets
+              ? (raffle.currentTickets / raffle.totalTickets) * 100
+              : 0;
 
             return (
               <div key={raffle.id} className="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-200 hover:scale-[1.02]">
@@ -166,11 +151,11 @@ const LiveRaffles = () => {
                     <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
                       <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
                     </div>
-                    <p className="text-gray-700 text-sm mt-2">Ticket Price: <span className="font-semibold">${raffle.ticketPrice.toFixed(2)}</span></p>
+                    <p className="text-gray-700 text-sm mt-2">Ticket Price: <span className="font-semibold">${raffle.ticketPrice?.toFixed(2) ?? 'N/A'}</span></p>
                     <p className="text-gray-700 text-sm mt-2">
-                        Draws in: <span className="font-bold text-red-600">
-                          {daysLeft} day{daysLeft !== 1 ? 's' : ''}
-                        </span>
+                      Draws in: <span className="font-bold text-red-600">
+                        {daysLeft} day{daysLeft !== 1 ? 's' : ''}
+                      </span>
                     </p>
                   </div>
 

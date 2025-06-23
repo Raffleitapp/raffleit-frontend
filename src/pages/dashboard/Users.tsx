@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
-// import axios from 'axios'; // You'll use this for real API calls
-// import { API_BASE_URL } from '../../constants/constants'; // Your API base URL
-// import { useAuth } from '../../context/authUtils'; // If you need to check user's role for permissions
+import { API_BASE_URL } from '../../constants/constants';
+import { useAuth } from '../../context/authUtils';
+import { useNavigate } from 'react-router-dom';
 
 // Define a type for a user
 interface User {
-  user_id: string | number; // Assuming user_id based on your login response
+  user_id: string | number;
   first_name: string;
   last_name: string;
   email: string;
   role: 'user' | 'host' | 'admin';
-  status: 'active' | 'inactive' | 'pending'; // Example status
+  status: 'active' | 'inactive' | 'pending';
   registration_date: string;
 }
 
@@ -19,82 +19,56 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState('all'); // 'all', 'user', 'host', 'admin'
-
-  // const { user: currentUser, isAuthenticated } = useAuth(); // Uncomment when ready to use authentication
+  const [filterRole, setFilterRole] = useState('all');
+  const { user: currentUser, isAuthenticated } = useAuth();
+  // If you store the token elsewhere (e.g., in localStorage), retrieve it like this:
+  const token = localStorage.getItem('token');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUsers = async () => {
-      // if (!isAuthenticated || currentUser?.role !== 'admin') {
-      //   setError("You do not have permission to view this page.");
-      //   setLoading(false);
-      //   return;
-      // }
+      if (!isAuthenticated || currentUser?.role !== 'admin') {
+        setError("You do not have permission to view this page.");
+        setLoading(false);
+        return;
+      }
 
       setLoading(true);
       setError(null);
 
-      // Simulate API call
       try {
-        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
+        const res = await fetch(`${API_BASE_URL}/users`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!res.ok) throw new Error('Failed to fetch users');
+        const data = await res.json();
 
-        // Mock data for users
-        const mockUsers: User[] = [
-          {
-            user_id: 1,
-            first_name: 'Admin',
-            last_name: 'User',
-            email: 'admin@funditzone.com',
-            role: 'admin',
-            status: 'active',
-            registration_date: '2023-01-15',
-          },
-          {
-            user_id: 2,
-            first_name: 'Alice',
-            last_name: 'Smith',
-            email: 'alice@example.com',
-            role: 'user',
-            status: 'active',
-            registration_date: '2023-03-20',
-          },
-          {
-            user_id: 3,
-            first_name: 'Bob',
-            last_name: 'Johnson',
-            email: 'bob@example.com',
-            role: 'host',
-            status: 'pending',
-            registration_date: '2024-01-01',
-          },
-          {
-            user_id: 4,
-            first_name: 'Charlie',
-            last_name: 'Brown',
-            email: 'charlie@example.com',
-            role: 'user',
-            status: 'inactive',
-            registration_date: '2023-07-10',
-          },
-          {
-            user_id: 5,
-            first_name: 'Diana',
-            last_name: 'Prince',
-            email: 'diana@example.com',
-            role: 'host',
-            status: 'active',
-            registration_date: '2024-02-28',
-          },
-        ];
-        setUsers(mockUsers);
+        // Map backend fields to frontend User type if needed
+        interface BackendUser {
+          id: string | number;
+          first_name: string;
+          last_name: string;
+          email: string;
+          role: 'user' | 'host' | 'admin';
+          status?: 'active' | 'inactive' | 'pending';
+          created_at?: string;
+        }
 
-        // In a real app:
-        // const response = await axios.get(`${API_BASE_URL}/api/admin/users`, {
-        //   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        // });
-        // setUsers(response.data.users); // Adjust based on your API response structure
-      } catch (err) {
-        console.error("Failed to fetch users:", err);
+        const mappedUsers: User[] = data.map((u: BackendUser) => ({
+          user_id: u.id,
+          first_name: u.first_name,
+          last_name: u.last_name,
+          email: u.email,
+          role: u.role,
+          status: u.status || 'active',
+          registration_date: u.created_at ? new Date(u.created_at).toISOString().slice(0, 10) : '',
+        }));
+
+        setUsers(mappedUsers);
+      } catch {
         setError("Failed to load users. Please try again later.");
       } finally {
         setLoading(false);
@@ -102,31 +76,46 @@ const Users = () => {
     };
 
     fetchUsers();
-  }, []); // Empty dependency array means this runs once on mount
+  }, [isAuthenticated, currentUser]);
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          user.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      user.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = filterRole === 'all' || user.role === filterRole;
     return matchesSearch && matchesRole;
   });
 
   const handleEdit = (userId: string | number) => {
-    alert(`Edit user with ID: ${userId}`);
-    // Implement navigation to a user edit page or open a modal
+    navigate(`/dashboard/users/${userId}/edit`);
   };
 
-  const handleChangeStatus = (userId: string | number, currentStatus: string) => {
+  const handleChangeStatus = async (userId: string | number, currentStatus: string) => {
+    // Example: PATCH /users/{id} with new status
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-    alert(`Changing status for user ${userId} to ${newStatus}`);
-    // In a real app, send API call to update status and then refresh users
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error('Failed to update status');
+      setUsers(users =>
+        users.map(u => u.user_id === userId ? { ...u, status: newStatus } : u)
+      );
+    } catch {
+      setError('Failed to update user status.');
+    }
   };
 
-  const handleDelete = (userId: string | number) => {
-    if (window.confirm(`Are you sure you want to delete user ${userId}?`)) {
-      alert(`Deleting user with ID: ${userId}`);
-      // In a real app, send API call to delete user and then remove from state
+  const handleDelete = async (userId: string | number) => {
+    if (!window.confirm(`Are you sure you want to delete user ${userId}?`)) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/${userId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete user');
+      setUsers(users => users.filter(u => u.user_id !== userId));
+    } catch {
+      setError('Failed to delete user.');
     }
   };
 
@@ -135,26 +124,21 @@ const Users = () => {
       <div className="p-6 bg-gray-100 min-h-screen flex items-center justify-center">
         <div className="loader"></div> Loading Users...
         <style>{`
-                  .loader {
-                    border: 4px solid #f3f3f3;
-                    border-top: 4px solid #3498db;
-                    border-radius: 50%;
-                    width: 30px;
-                    height: 30px;
-                    animation: spin 1s linear infinite;
-                    display: inline-block;
-                    margin-left: 10px;
-                  }
-
-                  @keyframes spin {
-                    0% {
-                      transform: rotate(0deg);
-                    }
-                    100% {
-                      transform: rotate(360deg);
-                    }
-                  }
-                `}</style>
+          .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+          }
+        `}</style>
       </div>
     );
   }
@@ -192,7 +176,7 @@ const Users = () => {
           <option value="admin">Admin</option>
         </select>
         <button
-          onClick={() => alert('Add New User functionality')} // Replace with actual Add User modal/page
+          onClick={() => navigate('/dashboard/users/new')}
           className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
         >
           Add New User
