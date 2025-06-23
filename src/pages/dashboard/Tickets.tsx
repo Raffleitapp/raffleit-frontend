@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../context/authUtils'; // Assuming this path is correct
+import { useAuth } from '../../context/authUtils';
+import { API_BASE_URL } from '../../constants/constants';
 
 // Define a type for a single ticket
 interface Ticket {
-  id: string;
+  id: number;
   raffleTitle: string;
   ticketNumber: string;
   drawDate: string;
   status: 'pending' | 'won' | 'lost';
-  prize?: string; // Optional if won
+  prize?: string;
 }
 
 const Tickets = () => {
@@ -28,43 +29,40 @@ const Tickets = () => {
       setLoading(true);
       setError(null);
 
-      // Simulate API call
       try {
-        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE_URL}/users/${user.user_id}/tickets`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!res.ok) throw new Error('Failed to fetch tickets');
+        const data = await res.json();
 
-        // Mock data based on user role or ID (if you had mock data per user)
-        const mockTickets: Ticket[] = [
-          {
-            id: 'tkt-001',
-            raffleTitle: 'Grand Summer Vacation',
-            ticketNumber: 'RAFLT-001-A2B3C',
-            drawDate: '2025-06-30',
-            status: 'pending',
-          },
-          {
-            id: 'tkt-002',
-            raffleTitle: 'Brand New Smartphone',
-            ticketNumber: 'RAFLT-002-X9Y8Z',
-            drawDate: '2025-05-25',
-            status: 'won',
-            prize: 'Latest iPhone Model',
-          },
-          {
-            id: 'tkt-003',
-            raffleTitle: 'Weekend Getaway Package',
-            ticketNumber: 'RAFLT-003-D4E5F',
-            drawDate: '2025-05-20',
-            status: 'lost',
-          },
-          {
-            id: 'tkt-004',
-            raffleTitle: 'Luxury Watch Raffle',
-            ticketNumber: 'RAFLT-004-G6H7I',
-            drawDate: '2025-07-15',
-            status: 'pending',
-          },
-        ];
-        setTickets(mockTickets);
+        // Map backend ticket fields to frontend Ticket type
+        interface BackendTicket {
+          id: number;
+          ticket_number: string;
+          status?: 'pending' | 'won' | 'lost';
+          prize?: string;
+          raffle?: {
+            title?: string;
+            host_name?: string;
+            ending_date?: string;
+          };
+        }
+
+        const mappedTickets: Ticket[] = (data as BackendTicket[]).map((t) => ({
+          id: t.id,
+          raffleTitle: t.raffle?.title || t.raffle?.host_name || 'Raffle',
+          ticketNumber: t.ticket_number,
+          drawDate: t.raffle?.ending_date ? new Date(t.raffle.ending_date).toISOString().slice(0, 10) : '',
+          status: t.status || 'pending',
+          prize: t.prize || undefined,
+        }));
+
+        setTickets(mappedTickets);
       } catch (err) {
         console.error("Failed to fetch tickets:", err);
         setError("Failed to load tickets. Please try again later.");

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/authUtils';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../constants/constants';
 
 interface UserProfile {
   user_id: string | number;
@@ -18,7 +19,7 @@ interface UserProfile {
 }
 
 const Profile = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,9 +27,9 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchProfileData = async () => {
-      if (!isAuthenticated || !user) {
+      if (!isAuthenticated) {
         setLoading(false);
-        setError("User not logged in or user data unavailable.");
+        setError("User not logged in.");
         return;
       }
 
@@ -36,24 +37,33 @@ const Profile = () => {
       setError(null);
 
       try {
-        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE_URL}/profile`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!res.ok) throw new Error('Failed to fetch profile');
+        const data = await res.json();
 
-        const mockUserProfile: UserProfile = {
-          user_id: user.user_id || 'N/A',
-          first_name: user.first_name || 'Guest',
-          last_name: user.last_name || 'User',
-          email: user.email || 'no-email@example.com',
-          role: user.role || 'user',
-          phone_number: user.role === 'admin' ? '+1234567890' : (user.role === 'host' ? '+1987654321' : null),
-          address: user.role === 'admin' ? '123 Admin St, City, Country' : (user.role === 'host' ? '456 Host Ave, Town, Country' : null),
-          raffles_entered: 15,
-          tickets_purchased: 42,
-          raffles_won: 3,
-          profile_picture_url: '/images/tb2.png',
-          registration_date: '2023-01-15',
+        // Map backend fields to UserProfile
+        const userProfile: UserProfile = {
+          user_id: data.id,
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          role: data.role,
+          phone_number: data.phone_number ?? null,
+          address: data.address ?? null,
+          raffles_entered: data.raffles_entered ?? 0,
+          tickets_purchased: data.tickets_purchased ?? 0,
+          raffles_won: data.raffles_won ?? 0,
+          profile_picture_url: data.image ?? '/images/tb2.png',
+          registration_date: data.created_at,
         };
 
-        setProfileData(mockUserProfile);
+        setProfileData(userProfile);
 
       } catch (err) {
         console.error("Failed to fetch profile data:", err);
@@ -64,7 +74,7 @@ const Profile = () => {
     };
 
     fetchProfileData();
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated]);
 
   if (loading) {
     return (
