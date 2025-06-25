@@ -36,15 +36,26 @@ export const DashboardHome = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!user?.user_id) return;
+      const token = localStorage.getItem('token');
+      if (!user?.user_id || !token) return;
       setLoading(true);
       try {
         // Fetch user's raffles
-        const rafflesRes = await fetch(`${API_BASE_URL}/users/${user.user_id}/raffles`);
+        const rafflesRes = await fetch(`${API_BASE_URL}/users/${user.user_id}/raffles`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         const raffles: Raffle[] = rafflesRes.ok ? await rafflesRes.json() : [];
 
         // Fetch user's tickets
-        const ticketsRes = await fetch(`${API_BASE_URL}/users/${user.user_id}/tickets`);
+        const ticketsRes = await fetch(`${API_BASE_URL}/users/${user.user_id}/tickets`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         const tickets: Ticket[] = ticketsRes.ok ? await ticketsRes.json() : [];
         const ticketsPurchased = tickets.length;
 
