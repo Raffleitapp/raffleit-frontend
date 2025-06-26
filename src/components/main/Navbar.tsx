@@ -16,7 +16,12 @@ const Navbar = () => {
         target: string;
         category_id: string;
         organisation_id: string;
+        fundraising_id: string;
+        state_raffle_hosted: string;
         image1: File | null; // for file upload
+        image2: File | null; // for file upload
+        image3: File | null; // for file upload
+        image4: File | null; // for file upload
     }>({
         title: "",
         host_name: "",
@@ -26,7 +31,12 @@ const Navbar = () => {
         target: "",
         category_id: "",
         organisation_id: "",
+        fundraising_id: "",
+        state_raffle_hosted: "",
         image1: null, // for file upload
+        image2: null, // for file upload
+        image3: null, // for file upload
+        image4: null, // for file upload
     });
     const [creating, setCreating] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -73,42 +83,38 @@ const Navbar = () => {
     const handleCreateRaffle = async () => {
         setCreating(true);
         setError(null);
-        let imageUrl = "";
         try {
             const token = localStorage.getItem('token');
-            // 1. Upload image if present
-            if (newRaffle.image1) {
-                const formData = new FormData();
-                formData.append("image", newRaffle.image1);
-                const imgRes = await fetch(`${API_BASE_URL}/images/upload`, {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${token}` },
-                    body: formData,
-                });
-                if (!imgRes.ok) throw new Error("Image upload failed");
-                const imgData = await imgRes.json();
-                imageUrl = imgData.path || imgData.url || "";
-            }
+            const formData = new FormData();
+            formData.append("title", newRaffle.title);
+            formData.append("host_name", newRaffle.host_name);
+            formData.append("description", newRaffle.description);
+            formData.append("starting_date", newRaffle.starting_date);
+            formData.append("ending_date", newRaffle.ending_date);
+            formData.append("target", newRaffle.target);
+            formData.append("category_id", newRaffle.category_id);
+            if (newRaffle.organisation_id) formData.append("organisation_id", newRaffle.organisation_id);
+            if (newRaffle.fundraising_id) formData.append("fundraising_id", newRaffle.fundraising_id);
+            if (newRaffle.state_raffle_hosted) formData.append("state_raffle_hosted", newRaffle.state_raffle_hosted);
+            // Support up to 4 images
+            if (newRaffle.image1) formData.append("image1", newRaffle.image1);
+            if (newRaffle.image2) formData.append("image2", newRaffle.image2);
+            if (newRaffle.image3) formData.append("image3", newRaffle.image3);
+            if (newRaffle.image4) formData.append("image4", newRaffle.image4);
 
-            // 2. Prepare payload
-            const payload = {
-                ...newRaffle,
-                target: newRaffle.target ? Number(newRaffle.target) : undefined,
-                category_id: newRaffle.category_id ? Number(newRaffle.category_id) : undefined,
-                organisation_id: newRaffle.organisation_id ? Number(newRaffle.organisation_id) : undefined,
-                image1: imageUrl,
-            };
-
-            // 3. Create raffle
             const res = await fetch(`${API_BASE_URL}/raffles`, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`,
                 },
-                body: JSON.stringify(payload),
+                body: formData,
             });
-            if (!res.ok) throw new Error("Failed to create raffle");
+
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(errText || "Failed to create raffle");
+            }
+
             setShowCreateModal(false);
             setNewRaffle({
                 title: "",
@@ -119,14 +125,15 @@ const Navbar = () => {
                 target: "",
                 category_id: "",
                 organisation_id: "",
+                fundraising_id: "",
+                state_raffle_hosted: "",
                 image1: null,
+                image2: null,
+                image3: null,
+                image4: null,
             });
         } catch (err: unknown) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError("Failed to create raffle.");
-            }
+            setError(err instanceof Error ? err.message : "Failed to create raffle.");
         } finally {
             setCreating(false);
         }
@@ -190,21 +197,24 @@ const Navbar = () => {
 
     useEffect(() => {
         if (showCreateModal) {
-            // Fetch categories
+            // Fetch categories (always needed)
             fetch(`${API_BASE_URL}/categories`)
                 .then(res => res.json())
                 .then(setCategories)
                 .catch(() => setCategories([]));
-            // Fetch organisations (owned by user)
-            const token = localStorage.getItem('token');
-            fetch(`${API_BASE_URL}/organisations`, {
-                headers: { "Authorization": `Bearer ${token}` }
-            })
-                .then(res => res.json())
-                .then(setOrganisations)
-                .catch(() => setOrganisations([]));
+
+            // Only fetch organisations if hostType is "organisation"
+            if (hostType === "organisation") {
+                const token = localStorage.getItem('token');
+                fetch(`${API_BASE_URL}/organisations`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                })
+                    .then(res => res.json())
+                    .then(setOrganisations)
+                    .catch(() => setOrganisations([]));
+            }
         }
-    }, [showCreateModal]);
+    }, [showCreateModal, hostType]);
 
     // Reset step when modal closes
     useEffect(() => {
@@ -510,7 +520,7 @@ const Navbar = () => {
                                         required
                                     />
                                     <label className="block">
-                                        <span className="text-gray-700 text-sm">Image (optional)</span>
+                                        <span className="text-gray-700 text-sm">Image 1 (optional)</span>
                                         <input
                                             type="file"
                                             accept="image/*"
