@@ -43,7 +43,7 @@ export const Raffles = () => {
         const res = await fetch(`${API_BASE_URL}/raffles`);
         if (!res.ok) throw new Error("Failed to fetch raffles");
         const data = await res.json();
-        setRaffles(data);
+        setRaffles(data); // Display all raffles
       } catch {
         setError("Failed to load raffles.");
       } finally {
@@ -90,7 +90,10 @@ export const Raffles = () => {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
-        body: JSON.stringify(newRaffle),
+        body: JSON.stringify({
+          ...newRaffle,
+          approve_status: 'approved', // Automatically approve raffles
+        }),
       });
       if (!res.ok) throw new Error("Failed to create raffle");
       setShowCreateModal(false);

@@ -21,8 +21,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     !!localStorage.getItem('token')
   );
 
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    setIsAuthenticated(!!user && !!localStorage.getItem('token'));
+    setLoading(true);
+    const token = localStorage.getItem('token');
+    setIsAuthenticated(!!user && !!token);
+    setLoading(false);
   }, [user]);
 
   const login = (token: string, userData: User) => {
@@ -55,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     register,
+    loading,
   };
 
   return (

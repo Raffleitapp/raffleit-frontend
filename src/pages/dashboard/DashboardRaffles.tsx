@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_BASE_URL } from "../../constants/constants";
+import { useAuth } from '../../context/authUtils'; // Import user context
 
 interface Raffle {
   id: number;
@@ -17,6 +18,7 @@ interface Raffle {
 }
 
 export function Raffles() {
+  const { user } = useAuth(); // Access user from context
   const [raffles, setRaffles] = useState<Raffle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,10 +36,21 @@ export function Raffles() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${API_BASE_URL}/raffles`);
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE_URL}/raffles`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        });
         if (!res.ok) throw new Error("Failed to fetch raffles");
         const data = await res.json();
-        setRaffles(data);
+
+        // Filter raffles based on user role
+        const filteredRaffles = user?.role === 'admin'
+          ? data // Admins see all raffles
+          : data.filter((raffle: Raffle) => raffle.hostName === `${user?.first_name} ${user?.last_name}`); // Users see their own raffles
+
+        setRaffles(filteredRaffles);
       } catch {
         setError("Failed to load raffles.");
       } finally {
@@ -45,7 +58,7 @@ export function Raffles() {
       }
     };
     fetchRaffles();
-  }, []);
+  }, [user?.first_name, user?.last_name, user?.role]); // Add necessary dependencies
 
   const handleCreateRaffle = async () => {
     try {
@@ -56,7 +69,10 @@ export function Raffles() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
-        body: JSON.stringify(newRaffle),
+        body: JSON.stringify({
+          ...newRaffle,
+          approve_status: 'approved', // Automatically approve raffles
+        }),
       });
       if (!res.ok) throw new Error("Failed to create raffle");
       setShowCreateModal(false);
