@@ -99,7 +99,7 @@ export const Raffles = () => {
       setShowCreateModal(false);
       // Optionally, refresh raffles list
     } catch {
-      alert("Failed to create raffle.");
+      setError("Failed to create raffle. Please try again.");
     }
   };
 

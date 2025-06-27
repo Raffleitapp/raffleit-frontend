@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/authUtils';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '../../constants/constants';
+import apiClient from '../../utils/apiClient';
 
 interface UserProfile {
   user_id: string | number;
@@ -44,26 +44,14 @@ const Profile = () => {
       setError(null);
 
       try {
-        console.log('API URL:', `${API_BASE_URL}/profile`);
-        console.log('Token exists:', !!token);
+        console.log('Fetching profile data...');
         
-        const res = await fetch(`${API_BASE_URL}/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const res = await apiClient.get('/profile');
         
         console.log('Response status:', res.status);
-        console.log('Response ok:', res.ok);
+        console.log('Response ok:', res.status === 200);
         
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error('API Error Response:', errorText);
-          throw new Error(`Failed to fetch profile (${res.status}): ${errorText}`);
-        }
-        
-        const data = await res.json();
+        const data = res.data;
         console.log('Profile data received:', data);
 
         // Map backend fields to UserProfile

@@ -10,6 +10,11 @@ interface CompletedRaffle {
   ticketsSold: number;
   drawDate: string;
   imageUrl: string;
+  images?: Array<{
+    id: number;
+    path: string;
+    url: string;
+  }>;
 }
 
 const CompletedRaffles = () => {
@@ -40,6 +45,12 @@ const CompletedRaffles = () => {
           ending_date: string;
           approve_status: string;
           image1?: string;
+          image1_url?: string;
+          images?: Array<{
+            id: number;
+            path: string;
+            url: string;
+          }>;
         }
 
         const completed = (data as ApiRaffle[]).filter((raffle) => {

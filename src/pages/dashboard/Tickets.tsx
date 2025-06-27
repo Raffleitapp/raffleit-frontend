@@ -120,7 +120,7 @@ const Tickets = () => {
         <div className="bg-white p-6 rounded-lg shadow-md text-center">
           <p className="text-gray-600">You haven't purchased any tickets yet.</p>
           <button
-            onClick={() => alert('Navigate to Raffles page')} // Replace with actual navigation
+            onClick={() => window.location.href = '/dashboard/live-raffles'}
             className="mt-4 px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
           >
             Explore Raffles
