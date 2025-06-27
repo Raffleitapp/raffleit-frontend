@@ -33,19 +33,38 @@ const Profile = () => {
         return;
       }
 
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setLoading(false);
+        setError("No authentication token found. Please log in again.");
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
       try {
-        const token = localStorage.getItem('token');
+        console.log('API URL:', `${API_BASE_URL}/profile`);
+        console.log('Token exists:', !!token);
+        
         const res = await fetch(`${API_BASE_URL}/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-        if (!res.ok) throw new Error('Failed to fetch profile');
+        
+        console.log('Response status:', res.status);
+        console.log('Response ok:', res.ok);
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('API Error Response:', errorText);
+          throw new Error(`Failed to fetch profile (${res.status}): ${errorText}`);
+        }
+        
         const data = await res.json();
+        console.log('Profile data received:', data);
 
         // Map backend fields to UserProfile
         const userProfile: UserProfile = {
@@ -67,7 +86,11 @@ const Profile = () => {
 
       } catch (err) {
         console.error("Failed to fetch profile data:", err);
-        setError("Failed to load profile data. Please try again later.");
+        console.error("Error details:", {
+          message: err instanceof Error ? err.message : 'Unknown error',
+          stack: err instanceof Error ? err.stack : undefined
+        });
+        setError(`Failed to load profile data: ${err instanceof Error ? err.message : 'Unknown error'}`);
       } finally {
         setLoading(false);
       }
@@ -115,8 +138,25 @@ const Profile = () => {
 
   if (error) {
     return (
-      <div className="p-6 bg-gray-100 min-h-screen text-red-700 text-center text-lg">
-        Error: {error}
+      <div className="p-6 bg-gray-100 min-h-screen text-center">
+        <div className="bg-white rounded-lg shadow-md p-8 max-w-md mx-auto">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Profile</h2>
+          <p className="text-gray-700 mb-6">{error}</p>
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
