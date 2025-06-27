@@ -28,7 +28,7 @@ export const Register = () => {
     }
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/register`, {
+      const response = await axios.post(`${API_BASE_URL}/register`, {
         first_name,
         last_name,
         email,

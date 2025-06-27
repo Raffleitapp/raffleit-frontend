@@ -86,6 +86,7 @@ function DashboardLayoutRoutes() {
         <Route path="raffles/:id/winners" element={<Raffles />} />
         <Route path="raffles/:id/entries" element={<Raffles />} />
         <Route path="raffles/:id/entries/:entryId" element={<Raffles />} />
+        <Route path="home" element={<Home />} />
         <Route path="*" element={<NotFound />} />
       </Route>
       <Route path="*" element={<NotFound />} />
@@ -100,14 +101,18 @@ interface ProtectedRouteProps {
 
 // Apply the props interface to ProtectedRoute
 function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!loading && !isAuthenticated) {
       navigate('/login', { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, loading, navigate]);
+
+  if (loading) {
+    return <div>Loading...</div>; // Show a loading indicator while authentication is being determined
+  }
 
   return isAuthenticated ? <>{children}</> : null;
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/authUtils';
+import { API_BASE_URL } from '../../constants/constants';
 
 interface NotificationPreferences {
   emailRaffleUpdates: boolean;
@@ -9,12 +10,13 @@ interface NotificationPreferences {
 }
 
 const Settings = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
+  const [userLoading, setUserLoading] = useState(true);
 
-  const [firstName, setFirstName] = useState(user?.first_name || '');
-  const [lastName, setLastName] = useState(user?.last_name || '');
-  const [email, setEmail] = useState(user?.email || '');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -31,19 +33,35 @@ const Settings = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    if (user) {
-      setFirstName(user.first_name || '');
-      setLastName(user.last_name || '');
-      setEmail(user.email || '');
+    const fetchProfile = async () => {
+      setUserLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE_URL}/profile`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!res.ok) throw new Error('Failed to fetch profile');
+        const data = await res.json();
+        console.log('Profile data:', data); // <-- Add this line
+        setFirstName(data.first_name || '');
+        setLastName(data.last_name || '');
+        setEmail(data.email || '');
+      } catch {
+        setFirstName('');
+        setLastName('');
+        setEmail('');
+      } finally {
+        setUserLoading(false);
+      }
+    };
 
-      setNotificationPrefs({
-        emailRaffleUpdates: true,
-        smsRaffleUpdates: false,
-        emailMarketing: true,
-        smsMarketing: false,
-      });
+    if (isAuthenticated) {
+      fetchProfile();
     }
-  }, [user]);
+  }, [isAuthenticated]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,6 +134,30 @@ const Settings = () => {
     return (
       <div className="p-6 bg-gray-100 min-h-screen text-red-700 text-center text-lg">
         Please log in to view your settings.
+      </div>
+    );
+  }
+
+  if (userLoading) {
+    return (
+      <div className="p-6 bg-gray-100 min-h-screen flex items-center justify-center">
+        <div className="loader"></div> Loading Profile...
+        <style>{`
+          .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+          }
+        `}</style>
       </div>
     );
   }
@@ -194,9 +236,9 @@ const Settings = () => {
                 disabled={loading}
               >
                 {loading ? (
-                    <>
-                      <span className="loader mr-2"></span> Updating Profile...
-                      <style>{`
+                  <>
+                    <span className="loader mr-2"></span> Updating Profile...
+                    <style>{`
                         .loader {
                           border: 2px solid #f3f3f3;
                           border-top: 2px solid #fff;
@@ -212,10 +254,10 @@ const Settings = () => {
                           100% { transform: rotate(360deg); }
                         }
                       `}</style>
-                    </>
-                  ) : (
-                    'Save Profile'
-                  )}
+                  </>
+                ) : (
+                  'Save Profile'
+                )}
               </button>
             </form>
           )}
@@ -261,10 +303,10 @@ const Settings = () => {
                 className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
                 disabled={loading}
               >
-                 {loading ? (
-                    <>
-                      <span className="loader mr-2"></span> Changing Password...
-                      <style>{`
+                {loading ? (
+                  <>
+                    <span className="loader mr-2"></span> Changing Password...
+                    <style>{`
                         .loader {
                           border: 2px solid #f3f3f3;
                           border-top: 2px solid #fff;
@@ -280,10 +322,10 @@ const Settings = () => {
                           100% { transform: rotate(360deg); }
                         }
                       `}</style>
-                    </>
-                  ) : (
-                    'Change Password'
-                  )}
+                  </>
+                ) : (
+                  'Change Password'
+                )}
               </button>
             </form>
           )}
@@ -350,10 +392,10 @@ const Settings = () => {
                 className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
                 disabled={loading}
               >
-                 {loading ? (
-                    <>
-                      <span className="loader mr-2"></span> Saving Preferences...
-                      <style>{`
+                {loading ? (
+                  <>
+                    <span className="loader mr-2"></span> Saving Preferences...
+                    <style>{`
                         .loader {
                           border: 2px solid #f3f3f3;
                           border-top: 2px solid #fff;
@@ -369,10 +411,10 @@ const Settings = () => {
                           100% { transform: rotate(360deg); }
                         }
                       `}</style>
-                    </>
-                  ) : (
-                    'Save Preferences'
-                  )}
+                  </>
+                ) : (
+                  'Save Preferences'
+                )}
               </button>
             </div>
           )}

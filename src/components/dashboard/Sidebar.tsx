@@ -1,4 +1,4 @@
-import { Dices, LayoutDashboard, LogOut, Settings, Ticket, User, Users, Menu, X, ChartNoAxesCombined, FileChartColumn } from "lucide-react";
+import { Dices, LayoutDashboard, LogOut, Settings, Ticket, User, Users, Menu, X, ChartNoAxesCombined, FileChartColumn, Home } from "lucide-react";
 import { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 
@@ -11,6 +11,7 @@ const USER_ROLES = {
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", roles: [USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.HOST] },
+    { icon: Home, label: "Website Home", href: "/", roles: [USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.HOST] },
     { icon: LayoutDashboard, label: "Category", href: "/dashboard/category", roles: [USER_ROLES.ADMIN] },
     { icon: Ticket, label: "Tickets", href: "/dashboard/tickets", roles: [USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.HOST] },
     { icon: Dices, label: "Live Raffles", href: "/dashboard/live-raffles", roles: [USER_ROLES.ADMIN, USER_ROLES.USER] },
@@ -39,7 +40,7 @@ export const Sidebar = () => {
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
-        navigate('/login');
+        navigate('/'); // Redirect to home page after logout
     };
 
     const filteredSidebarItems = sidebarItems.filter(item =>

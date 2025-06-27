@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../constants/constants';
 
 interface CategoryItem {
-  id: string;
-  name: string;
+  id: number;
+  category_name: string;
   raffleCount?: number;
 }
 
@@ -21,18 +22,11 @@ const Category = () => {
       setMessage(null);
 
       try {
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        const mockCategories: CategoryItem[] = [
-          { id: 'cat-001', name: 'Electronics', raffleCount: 25 },
-          { id: 'cat-002', name: 'Vehicles', raffleCount: 10 },
-          { id: 'cat-003', name: 'Travel & Experiences', raffleCount: 8 },
-          { id: 'cat-004', name: 'Home Goods', raffleCount: 15 },
-          { id: 'cat-005', name: 'Fashion & Accessories', raffleCount: 12 },
-        ];
-        setCategories(mockCategories);
-      } catch (err) {
-        console.error("Failed to fetch categories:", err);
+        const res = await fetch(`${API_BASE_URL}/categories`);
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        setCategories(data);
+      } catch {
         setError("Failed to load categories. Please try again.");
       } finally {
         setLoading(false);
@@ -53,21 +47,30 @@ const Category = () => {
     setMessage(null);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-
       if (editingCategory) {
-        const updatedCategory: CategoryItem = { ...editingCategory, name: categoryName.trim() };
-        setCategories(categories.map(cat => cat.id === updatedCategory.id ? updatedCategory : cat));
-        setMessage({ type: 'success', text: `Category "${updatedCategory.name}" updated successfully!` });
+        const res = await fetch(`${API_BASE_URL}/categories/${editingCategory.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category_name: categoryName.trim() }),
+        });
+        if (!res.ok) throw new Error('Failed to update');
+        const updated = await res.json();
+        setCategories(categories.map(cat => cat.id === updated.id ? updated : cat));
+        setMessage({ type: 'success', text: `Category "${updated.category_name}" updated successfully!` });
       } else {
-        const newCategory: CategoryItem = { id: `cat-${Date.now()}`, name: categoryName.trim(), raffleCount: 0 };
-        setCategories([...categories, newCategory]);
-        setMessage({ type: 'success', text: `Category "${newCategory.name}" added successfully!` });
+        const res = await fetch(`${API_BASE_URL}/categories`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category_name: categoryName.trim() }),
+        });
+        if (!res.ok) throw new Error('Failed to add');
+        const created = await res.json();
+        setCategories([...categories, created]);
+        setMessage({ type: 'success', text: `Category "${created.category_name}" added successfully!` });
       }
       setCategoryName('');
       setEditingCategory(null);
-    } catch (err) {
-      console.error("Failed to save category:", err);
+    } catch {
       setMessage({ type: 'error', text: `Failed to ${editingCategory ? 'update' : 'add'} category. Please try again.` });
     } finally {
       setLoading(false);
@@ -76,11 +79,11 @@ const Category = () => {
 
   const handleEdit = (category: CategoryItem) => {
     setEditingCategory(category);
-    setCategoryName(category.name);
+    setCategoryName(category.category_name);
     setMessage(null);
   };
 
-  const handleDelete = async (categoryId: string, categoryName: string) => {
+  const handleDelete = async (categoryId: number, categoryName: string) => {
     if (!window.confirm(`Are you sure you want to delete the category "${categoryName}"? This action cannot be undone and may affect associated raffles.`)) {
       return;
     }
@@ -89,11 +92,11 @@ const Category = () => {
     setMessage(null);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const res = await fetch(`${API_BASE_URL}/categories/${categoryId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
       setCategories(categories.filter(cat => cat.id !== categoryId));
       setMessage({ type: 'success', text: `Category "${categoryName}" deleted successfully!` });
-    } catch (err) {
-      console.error("Failed to delete category:", err);
+    } catch {
       setMessage({ type: 'error', text: `Failed to delete category "${categoryName}". It might have associated raffles.` });
     } finally {
       setLoading(false);
@@ -240,7 +243,7 @@ const Category = () => {
               categories.map((category) => (
                 <tr key={category.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{category.id}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{category.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{category.category_name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{category.raffleCount ?? 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
@@ -251,7 +254,7 @@ const Category = () => {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(category.id, category.name)}
+                      onClick={() => handleDelete(category.id, category.category_name)}
                       className="text-red-600 hover:text-red-900 disabled:opacity-50"
                       disabled={loading}
                     >
