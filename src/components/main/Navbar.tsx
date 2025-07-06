@@ -18,6 +18,9 @@ const Navbar = () => {
         organisation_id: string;
         fundraising_id: string;
         state_raffle_hosted: string;
+        type: "raffle" | "fundraising";
+        ticket_price: string;
+        max_tickets: string;
         image1: File | null; // for file upload
         image2: File | null; // for file upload
         image3: File | null; // for file upload
@@ -33,6 +36,9 @@ const Navbar = () => {
         organisation_id: "",
         fundraising_id: "",
         state_raffle_hosted: "",
+        type: "raffle",
+        ticket_price: "",
+        max_tickets: "",
         image1: null, // for file upload
         image2: null, // for file upload
         image3: null, // for file upload
@@ -83,8 +89,49 @@ const Navbar = () => {
     const handleCreateRaffle = async () => {
         setCreating(true);
         setError(null);
+        
+        // Validation
+        if (!newRaffle.title.trim()) {
+            setError("Title is required");
+            setCreating(false);
+            return;
+        }
+        if (!newRaffle.host_name.trim()) {
+            setError("Host name is required");
+            setCreating(false);
+            return;
+        }
+        if (!newRaffle.category_id) {
+            setError("Please select a category");
+            setCreating(false);
+            return;
+        }
+        if (!newRaffle.ending_date) {
+            setError("End date is required");
+            setCreating(false);
+            return;
+        }
+        if (newRaffle.type === "raffle") {
+            if (!newRaffle.ticket_price || parseFloat(newRaffle.ticket_price) <= 0) {
+                setError("Valid ticket price is required for raffles");
+                setCreating(false);
+                return;
+            }
+            if (!newRaffle.max_tickets || parseInt(newRaffle.max_tickets) <= 0) {
+                setError("Valid maximum tickets is required for raffles");
+                setCreating(false);
+                return;
+            }
+        }
+        
         try {
             const token = localStorage.getItem('token');
+            if (!token) {
+                setError("You must be logged in to create a raffle");
+                setCreating(false);
+                return;
+            }
+            
             const formData = new FormData();
             formData.append("title", newRaffle.title);
             formData.append("host_name", newRaffle.host_name);
@@ -93,6 +140,11 @@ const Navbar = () => {
             formData.append("ending_date", newRaffle.ending_date);
             formData.append("target", newRaffle.target);
             formData.append("category_id", newRaffle.category_id);
+            formData.append("type", newRaffle.type);
+            if (newRaffle.type === "raffle") {
+                formData.append("ticket_price", newRaffle.ticket_price);
+                formData.append("max_tickets", newRaffle.max_tickets);
+            }
             if (newRaffle.organisation_id) formData.append("organisation_id", newRaffle.organisation_id);
             if (newRaffle.fundraising_id) formData.append("fundraising_id", newRaffle.fundraising_id);
             if (newRaffle.state_raffle_hosted) formData.append("state_raffle_hosted", newRaffle.state_raffle_hosted);
@@ -102,6 +154,13 @@ const Navbar = () => {
             if (newRaffle.image3) formData.append("image3", newRaffle.image3);
             if (newRaffle.image4) formData.append("image4", newRaffle.image4);
 
+            console.log('API_BASE_URL:', API_BASE_URL);
+            console.log('Sending request to:', `${API_BASE_URL}/raffles`);
+            console.log('FormData entries:');
+            for (const [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
+
             const res = await fetch(`${API_BASE_URL}/raffles`, {
                 method: "POST",
                 headers: {
@@ -110,10 +169,18 @@ const Navbar = () => {
                 body: formData,
             });
 
+            console.log('Response status:', res.status);
+            console.log('Response URL:', res.url);
+            console.log('Response headers:', res.headers);
+
             if (!res.ok) {
                 const errText = await res.text();
-                throw new Error(errText || "Failed to create raffle");
+                console.error('Error response:', errText);
+                throw new Error(errText || `Failed to create raffle (${res.status})`);
             }
+
+            const responseData = await res.json();
+            console.log('Success response:', responseData);
 
             setShowCreateModal(false);
             setNewRaffle({
@@ -127,6 +194,9 @@ const Navbar = () => {
                 organisation_id: "",
                 fundraising_id: "",
                 state_raffle_hosted: "",
+                type: "raffle",
+                ticket_price: "",
+                max_tickets: "",
                 image1: null,
                 image2: null,
                 image3: null,
@@ -483,6 +553,65 @@ const Navbar = () => {
                                         rows={3}
                                         required
                                     />
+                                    
+                                    {/* Campaign Type Selection */}
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Campaign Type</label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button
+                                                type="button"
+                                                className={`p-3 border rounded-lg text-center transition-all ${
+                                                    newRaffle.type === 'raffle' 
+                                                        ? 'border-purple-500 bg-purple-50 text-purple-700' 
+                                                        : 'border-gray-300 hover:border-gray-400'
+                                                }`}
+                                                onClick={() => setNewRaffle({ ...newRaffle, type: 'raffle' })}
+                                            >
+                                                <div className="text-lg mb-1">🎟️</div>
+                                                <div className="font-medium">Raffle</div>
+                                                <div className="text-xs text-gray-600">Sell tickets for prizes</div>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`p-3 border rounded-lg text-center transition-all ${
+                                                    newRaffle.type === 'fundraising' 
+                                                        ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                                                        : 'border-gray-300 hover:border-gray-400'
+                                                }`}
+                                                onClick={() => setNewRaffle({ ...newRaffle, type: 'fundraising' })}
+                                            >
+                                                <div className="text-lg mb-1">💝</div>
+                                                <div className="font-medium">Fundraising</div>
+                                                <div className="text-xs text-gray-600">Accept donations</div>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Raffle-specific fields */}
+                                    {newRaffle.type === 'raffle' && (
+                                        <div className="space-y-3">
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    className="p-2 border rounded-lg text-black"
+                                                    placeholder="Ticket Price ($)"
+                                                    value={newRaffle.ticket_price}
+                                                    onChange={e => setNewRaffle({ ...newRaffle, ticket_price: e.target.value })}
+                                                    min="0.01"
+                                                    required
+                                                />
+                                                <input
+                                                    type="number"
+                                                    className="p-2 border rounded-lg text-black"
+                                                    placeholder="Max Tickets (optional)"
+                                                    value={newRaffle.max_tickets}
+                                                    onChange={e => setNewRaffle({ ...newRaffle, max_tickets: e.target.value })}
+                                                    min="1"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="flex gap-2">
                                         <input
                                             type="date"

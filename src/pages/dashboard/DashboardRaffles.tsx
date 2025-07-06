@@ -11,6 +11,12 @@ interface Raffle {
   starting_date: string;
   ending_date: string;
   approve_status: string;
+  type: 'raffle' | 'fundraising';
+  ticket_price?: number;
+  max_tickets?: number;
+  tickets_sold?: number;
+  calculated_tickets_sold?: number;
+  current_amount?: number;
   image1?: string;
   image2?: string;
   image3?: string;
@@ -44,7 +50,10 @@ export function Raffles() {
     description: "",
     starting_date: "",
     ending_date: "",
-    // Add other fields as needed
+    type: "raffle" as "raffle" | "fundraising",
+    ticket_price: "",
+    max_tickets: "",
+    target: "",
   });
 
   useEffect(() => {
@@ -218,7 +227,14 @@ export function Raffles() {
 
                 {/* Content Section */}
                 <div className="p-4">
-                  <h2 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2">{raffle.title}</h2>
+                  <div className="flex justify-between items-start mb-2">
+                    <h2 className="font-bold text-lg text-gray-900 line-clamp-2 flex-1">{raffle.title}</h2>
+                    <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
+                      raffle.type === 'raffle' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {raffle.type === 'raffle' ? '🎟️ Raffle' : '💝 Fundraising'}
+                    </span>
+                  </div>
                   <p className="text-sm text-gray-600 mb-2">Host: {raffle.host_name}</p>
                   
                   {raffle.description && (
@@ -231,9 +247,36 @@ export function Raffles() {
                     </p>
                   )}
 
-                  <div className="flex justify-between items-center text-sm text-gray-600 mb-3">
-                    <span>Target: ${raffle.target?.toLocaleString()}</span>
-                    <span>Ends: {new Date(raffle.ending_date).toLocaleDateString()}</span>
+                  <div className="space-y-2 mb-3">
+                    <div className="flex justify-between items-center text-sm text-gray-600">
+                      <span>Target: ${raffle.target?.toLocaleString()}</span>
+                      <span>Ends: {new Date(raffle.ending_date).toLocaleDateString()}</span>
+                    </div>
+                    
+                    {raffle.type === 'raffle' && (
+                      <div className="space-y-1">
+                        {raffle.ticket_price && (
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-green-600 font-medium">Ticket Price:</span>
+                            <span className="font-semibold">${raffle.ticket_price}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-purple-600 font-medium">Tickets Sold:</span>
+                          <span className="font-semibold">
+                            {raffle.calculated_tickets_sold ?? raffle.tickets_sold ?? 0}
+                            {raffle.max_tickets && ` / ${raffle.max_tickets}`}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {raffle.type === 'fundraising' && raffle.current_amount !== undefined && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-blue-600 font-medium">Raised:</span>
+                        <span className="font-semibold">${raffle.current_amount.toLocaleString()}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Action Buttons */}
@@ -255,23 +298,94 @@ export function Raffles() {
       {/* Create Raffle Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-4">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">Create New Raffle</h2>
+          <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-6 text-gray-900">Create New Campaign</h2>
             <form onSubmit={(e) => { e.preventDefault(); handleCreateRaffle(); }}>
+              {/* Type Selection */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Campaign Type</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    className={`p-3 border rounded-lg text-center transition-all ${
+                      newRaffle.type === 'raffle' 
+                        ? 'border-purple-500 bg-purple-50 text-purple-700' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                    onClick={() => setNewRaffle({ ...newRaffle, type: 'raffle' })}
+                  >
+                    <div className="text-lg mb-1">🎟️</div>
+                    <div className="font-medium">Raffle</div>
+                    <div className="text-xs text-gray-600">Sell tickets for prizes</div>
+                  </button>
+                  <button
+                    type="button"
+                    className={`p-3 border rounded-lg text-center transition-all ${
+                      newRaffle.type === 'fundraising' 
+                        ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                    onClick={() => setNewRaffle({ ...newRaffle, type: 'fundraising' })}
+                  >
+                    <div className="text-lg mb-1">💝</div>
+                    <div className="font-medium">Fundraising</div>
+                    <div className="text-xs text-gray-600">Accept donations</div>
+                  </button>
+                </div>
+              </div>
+
               <input
                 className="w-full mb-4 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Raffle Title"
+                placeholder={newRaffle.type === 'raffle' ? 'Raffle Title' : 'Fundraising Campaign Title'}
                 value={newRaffle.title}
                 onChange={e => setNewRaffle({ ...newRaffle, title: e.target.value })}
                 required
               />
               <textarea
                 className="w-full mb-4 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                placeholder="Description"
+                placeholder={newRaffle.type === 'raffle' ? 'Describe the prize and raffle details' : 'Describe your fundraising cause'}
                 value={newRaffle.description}
                 onChange={e => setNewRaffle({ ...newRaffle, description: e.target.value })}
                 rows={3}
               />
+
+              {/* Target Amount */}
+              <input
+                type="number"
+                className="w-full mb-4 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={newRaffle.type === 'raffle' ? 'Target Amount ($)' : 'Fundraising Goal ($)'}
+                value={newRaffle.target}
+                onChange={e => setNewRaffle({ ...newRaffle, target: e.target.value })}
+                min="1"
+                required
+              />
+
+              {/* Raffle-specific fields */}
+              {newRaffle.type === 'raffle' && (
+                <div className="space-y-4 mb-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Ticket Price ($)"
+                      value={newRaffle.ticket_price}
+                      onChange={e => setNewRaffle({ ...newRaffle, ticket_price: e.target.value })}
+                      min="0.01"
+                      required
+                    />
+                    <input
+                      type="number"
+                      className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Max Tickets (optional)"
+                      value={newRaffle.max_tickets}
+                      onChange={e => setNewRaffle({ ...newRaffle, max_tickets: e.target.value })}
+                      min="1"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <input
                   type="date"

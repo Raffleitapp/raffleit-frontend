@@ -5,16 +5,34 @@ import { API_BASE_URL } from "../constants/constants";
 interface Raffle {
   id: number;
   title: string;
-  amount: number;
-  endsIn: string;
-  date: string;
-  image: string;
-  organization: string;
-  targetAmount: number;
-  hostName: string;
-  startDate: string;
-  endDate: string;
+  host_name: string;
   description: string;
+  target: number;
+  starting_date: string;
+  ending_date: string;
+  approve_status: string;
+  type: 'raffle' | 'fundraising';
+  ticket_price?: number;
+  max_tickets?: number;
+  tickets_sold?: number;
+  calculated_tickets_sold?: number;
+  current_amount?: number;
+  image1?: string;
+  image1_url?: string;
+  category?: {
+    id: number;
+    category_name: string;
+  };
+  // Legacy fields for compatibility
+  amount?: number;
+  endsIn?: string;
+  date?: string;
+  image?: string;
+  organization?: string;
+  targetAmount?: number;
+  hostName?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export const Raffles = () => {
@@ -29,9 +47,13 @@ export const Raffles = () => {
   const [newRaffle, setNewRaffle] = useState({
     title: "",
     description: "",
-    startDate: "",
-    endDate: "",
-    // Add other fields as needed
+    starting_date: "",
+    ending_date: "",
+    target: "",
+    type: "raffle" as "raffle" | "fundraising",
+    ticket_price: "",
+    max_tickets: "",
+    host_name: "",
   });
   const itemsPerPage = 3;
 
@@ -43,7 +65,15 @@ export const Raffles = () => {
         const res = await fetch(`${API_BASE_URL}/raffles`);
         if (!res.ok) throw new Error("Failed to fetch raffles");
         const data = await res.json();
-        setRaffles(data); // Display all raffles
+        
+        // Filter for only approved and live raffles
+        const now = new Date();
+        const liveRaffles = data.filter((raffle: Raffle) => 
+          raffle.approve_status === 'approved' && 
+          new Date(raffle.ending_date) > now
+        );
+        
+        setRaffles(liveRaffles);
       } catch {
         setError("Failed to load raffles.");
       } finally {
@@ -117,25 +147,75 @@ export const Raffles = () => {
           </h2>
         </div>
         {selectedRaffle ? (
-          <div className="raffle-details p-6 border rounded shadow-md bg-white">
+          <div className="raffle-details p-6 border rounded-lg shadow-lg bg-white max-w-4xl mx-auto">
             <button
               onClick={() => setSelectedRaffle(null)}
-              className="mb-4 text-blue-500 underline"
+              className="mb-4 text-blue-500 underline hover:text-blue-700"
             >
-              Back to Raffles
+              ← Back to Raffles
             </button>
-            <img
-              src={selectedRaffle.image}
-              alt={selectedRaffle.title}
-              className="w-full h-60 object-cover rounded mb-4"
-            />
-            <h2 className="text-2xl font-bold mb-2">{selectedRaffle.title}</h2>
-            <p><strong>Organization:</strong> {selectedRaffle.organization}</p>
-            <p><strong>Target Amount:</strong> ${selectedRaffle.targetAmount}</p>
-            <p><strong>Host Name:</strong> {selectedRaffle.hostName}</p>
-            <p><strong>Start Date:</strong> {selectedRaffle.startDate}</p>
-            <p><strong>End Date:</strong> {selectedRaffle.endDate}</p>
-            <p className="mt-4">{selectedRaffle.description}</p>
+            
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="md:w-1/2">
+                <img
+                  src={selectedRaffle.image1_url || selectedRaffle.image || '/images/default-raffle.png'}
+                  alt={selectedRaffle.title}
+                  className="w-full h-64 object-cover rounded-lg"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/images/default-raffle.png';
+                  }}
+                />
+              </div>
+              
+              <div className="md:w-1/2">
+                <div className="flex items-center gap-2 mb-2">
+                  <h1 className="text-3xl font-bold">{selectedRaffle.title}</h1>
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                    selectedRaffle.type === 'raffle' 
+                      ? 'bg-purple-100 text-purple-800' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {selectedRaffle.type === 'raffle' ? '🎟️ Raffle' : '💝 Fundraising'}
+                  </span>
+                </div>
+                
+                <div className="space-y-3 mb-4">
+                  <p><strong>Host:</strong> {selectedRaffle.host_name}</p>
+                  {selectedRaffle.category && (
+                    <p><strong>Category:</strong> {selectedRaffle.category.category_name}</p>
+                  )}
+                  <p><strong>Target Amount:</strong> ${selectedRaffle.target?.toLocaleString()}</p>
+                  <p><strong>End Date:</strong> {new Date(selectedRaffle.ending_date).toLocaleDateString()}</p>
+                  
+                  {selectedRaffle.type === 'raffle' ? (
+                    <>
+                      {selectedRaffle.ticket_price && (
+                        <p><strong>Ticket Price:</strong> ${selectedRaffle.ticket_price}</p>
+                      )}
+                      <p><strong>Tickets Sold:</strong> {selectedRaffle.calculated_tickets_sold ?? selectedRaffle.tickets_sold ?? 0}
+                        {selectedRaffle.max_tickets && ` / ${selectedRaffle.max_tickets}`}
+                      </p>
+                    </>
+                  ) : (
+                    <p><strong>Amount Raised:</strong> ${(selectedRaffle.current_amount ?? 0).toLocaleString()}</p>
+                  )}
+                </div>
+                
+                {selectedRaffle.description && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold mb-2">Description</h3>
+                    <p className="text-gray-700">{selectedRaffle.description}</p>
+                  </div>
+                )}
+                
+                <div className="mt-6">
+                  <button className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors">
+                    {selectedRaffle.type === 'raffle' ? 'Buy Tickets' : 'Make Donation'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
           <>
@@ -163,24 +243,85 @@ export const Raffles = () => {
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 justify-items-center gap-4">
-              {paginatedRaffles.map((raffle) => (
-                <div
-                  key={raffle.id}
-                  className="raffle-item border rounded shadow-md w-full cursor-pointer"
-                  onClick={() => setSelectedRaffle(raffle)}
-                >
-                  <img
-                    src={raffle.image}
-                    alt={raffle.title}
-                    className="w-full h-40 object-cover rounded mb-4"
-                  />
-                  <div className="p-4">
-                    <h3 className="font-bold text-lg">{raffle.title}</h3>
-                    <p>Amount Collected: ${raffle.amount}</p>
-                    <p>Ends In: <span>{raffle.endsIn}</span></p>
+              {paginatedRaffles.map((raffle) => {
+                const daysLeft = Math.ceil((new Date(raffle.ending_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                const imageUrl = raffle.image1_url || raffle.image || '/images/default-raffle.png';
+                
+                return (
+                  <div
+                    key={raffle.id}
+                    className="raffle-item border rounded-lg shadow-md w-full cursor-pointer hover:shadow-lg transition-shadow"
+                    onClick={() => setSelectedRaffle(raffle)}
+                  >
+                    <div className="relative">
+                      <img
+                        src={imageUrl}
+                        alt={raffle.title}
+                        className="w-full h-40 object-cover rounded-t-lg"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/images/default-raffle.png';
+                        }}
+                      />
+                      {/* Campaign type badge */}
+                      <div className="absolute top-2 left-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          raffle.type === 'raffle' 
+                            ? 'bg-purple-100 text-purple-800' 
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {raffle.type === 'raffle' ? '🎟️ Raffle' : '💝 Fundraising'}
+                        </span>
+                      </div>
+                      {/* Days left badge */}
+                      <div className="absolute top-2 right-2">
+                        <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-semibold">
+                          {daysLeft} day{daysLeft !== 1 ? 's' : ''} left
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-lg mb-2 line-clamp-2">{raffle.title}</h3>
+                      <p className="text-sm text-gray-600 mb-2">Host: {raffle.host_name}</p>
+                      
+                      {raffle.category && (
+                        <p className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded inline-block mb-2">
+                          {raffle.category.category_name}
+                        </p>
+                      )}
+                      
+                      <div className="space-y-1">
+                        {raffle.type === 'raffle' ? (
+                          <>
+                            {raffle.ticket_price && (
+                              <p className="text-sm">
+                                <span className="text-green-600 font-medium">Ticket Price:</span> 
+                                <span className="font-semibold ml-1">${raffle.ticket_price}</span>
+                              </p>
+                            )}
+                            <p className="text-sm">
+                              <span className="text-purple-600 font-medium">Tickets Sold:</span> 
+                              <span className="font-semibold ml-1">
+                                {raffle.calculated_tickets_sold ?? raffle.tickets_sold ?? 0}
+                                {raffle.max_tickets && ` / ${raffle.max_tickets}`}
+                              </span>
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-sm">
+                            <span className="text-blue-600 font-medium">Amount Raised:</span> 
+                            <span className="font-semibold ml-1">${(raffle.current_amount ?? 0).toLocaleString()}</span>
+                          </p>
+                        )}
+                        <p className="text-sm">
+                          <span className="text-gray-600">Target:</span> 
+                          <span className="font-semibold ml-1">${raffle.target?.toLocaleString()}</span>
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="flex justify-center mt-6">
               {Array.from({ length: totalPages }, (_, index) => (
@@ -205,46 +346,136 @@ export const Raffles = () => {
               </button>
             </div>
             {showCreateModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-                <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-                  <h2 className="text-xl font-bold mb-4">Create New Raffle</h2>
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+                  <h2 className="text-2xl font-bold mb-6">Create New Campaign</h2>
+                  
+                  {/* Type Selection */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Campaign Type</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        className={`p-3 border rounded-lg text-center transition-all ${
+                          newRaffle.type === 'raffle' 
+                            ? 'border-purple-500 bg-purple-50 text-purple-700' 
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                        onClick={() => setNewRaffle({ ...newRaffle, type: 'raffle' })}
+                      >
+                        <div className="text-lg mb-1">🎟️</div>
+                        <div className="font-medium">Raffle</div>
+                        <div className="text-xs text-gray-600">Sell tickets for prizes</div>
+                      </button>
+                      <button
+                        type="button"
+                        className={`p-3 border rounded-lg text-center transition-all ${
+                          newRaffle.type === 'fundraising' 
+                            ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                        onClick={() => setNewRaffle({ ...newRaffle, type: 'fundraising' })}
+                      >
+                        <div className="text-lg mb-1">💝</div>
+                        <div className="font-medium">Fundraising</div>
+                        <div className="text-xs text-gray-600">Accept donations</div>
+                      </button>
+                    </div>
+                  </div>
+
                   <input
-                    className="w-full mb-2 p-2 border rounded"
-                    placeholder="Title"
+                    className="w-full mb-4 p-3 border border-gray-300 rounded-lg"
+                    placeholder={newRaffle.type === 'raffle' ? 'Raffle Title' : 'Fundraising Campaign Title'}
                     value={newRaffle.title}
                     onChange={e => setNewRaffle({ ...newRaffle, title: e.target.value })}
+                    required
                   />
+                  
+                  <input
+                    className="w-full mb-4 p-3 border border-gray-300 rounded-lg"
+                    placeholder="Host Name"
+                    value={newRaffle.host_name}
+                    onChange={e => setNewRaffle({ ...newRaffle, host_name: e.target.value })}
+                    required
+                  />
+                  
                   <textarea
-                    className="w-full mb-2 p-2 border rounded"
-                    placeholder="Description"
+                    className="w-full mb-4 p-3 border border-gray-300 rounded-lg resize-none"
+                    placeholder={newRaffle.type === 'raffle' ? 'Describe the prize and raffle details' : 'Describe your fundraising cause'}
                     value={newRaffle.description}
                     onChange={e => setNewRaffle({ ...newRaffle, description: e.target.value })}
+                    rows={3}
                   />
+
+                  {/* Target Amount */}
                   <input
-                    type="date"
-                    className="w-full mb-2 p-2 border rounded"
-                    value={newRaffle.startDate}
-                    onChange={e => setNewRaffle({ ...newRaffle, startDate: e.target.value })}
+                    type="number"
+                    className="w-full mb-4 p-3 border border-gray-300 rounded-lg"
+                    placeholder={newRaffle.type === 'raffle' ? 'Target Amount ($)' : 'Fundraising Goal ($)'}
+                    value={newRaffle.target}
+                    onChange={e => setNewRaffle({ ...newRaffle, target: e.target.value })}
+                    min="1"
+                    required
                   />
-                  <input
-                    type="date"
-                    className="w-full mb-2 p-2 border rounded"
-                    value={newRaffle.endDate}
-                    onChange={e => setNewRaffle({ ...newRaffle, endDate: e.target.value })}
-                  />
-                  {/* Add more fields as needed */}
-                  <div className="flex justify-end gap-2">
+
+                  {/* Raffle-specific fields */}
+                  {newRaffle.type === 'raffle' && (
+                    <div className="space-y-4 mb-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="p-3 border border-gray-300 rounded-lg"
+                          placeholder="Ticket Price ($)"
+                          value={newRaffle.ticket_price}
+                          onChange={e => setNewRaffle({ ...newRaffle, ticket_price: e.target.value })}
+                          min="0.01"
+                          required
+                        />
+                        <input
+                          type="number"
+                          className="p-3 border border-gray-300 rounded-lg"
+                          placeholder="Max Tickets (optional)"
+                          value={newRaffle.max_tickets}
+                          onChange={e => setNewRaffle({ ...newRaffle, max_tickets: e.target.value })}
+                          min="1"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <input
+                      type="date"
+                      className="p-3 border border-gray-300 rounded-lg"
+                      placeholder="Start Date"
+                      value={newRaffle.starting_date}
+                      onChange={e => setNewRaffle({ ...newRaffle, starting_date: e.target.value })}
+                      required
+                    />
+                    <input
+                      type="date"
+                      className="p-3 border border-gray-300 rounded-lg"
+                      placeholder="End Date"
+                      value={newRaffle.ending_date}
+                      onChange={e => setNewRaffle({ ...newRaffle, ending_date: e.target.value })}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end gap-3">
                     <button
-                      className="px-4 py-2 bg-gray-300 rounded"
+                      type="button"
+                      className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                       onClick={() => setShowCreateModal(false)}
                     >
                       Cancel
                     </button>
                     <button
-                      className="px-4 py-2 bg-blue-600 text-white rounded"
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                       onClick={handleCreateRaffle}
                     >
-                      Create
+                      Create {newRaffle.type === 'raffle' ? 'Raffle' : 'Campaign'}
                     </button>
                   </div>
                 </div>

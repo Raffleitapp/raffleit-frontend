@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../constants/constants';
 
+// Define a type for a single completed raffle
 interface CompletedRaffle {
   id: number;
   title: string;
@@ -10,6 +11,11 @@ interface CompletedRaffle {
   ticketsSold: number;
   drawDate: string;
   imageUrl: string;
+  type: 'raffle' | 'fundraising';
+  currentAmount: number;
+  ticketRevenue: number;
+  donationAmount: number;
+  target: number;
   images?: Array<{
     id: number;
     path: string;
@@ -44,6 +50,10 @@ const CompletedRaffles = () => {
           tickets_sold?: number;
           ending_date: string;
           approve_status: string;
+          type: 'raffle' | 'fundraising';
+          current_amount?: number;
+          ticket_price?: number | string;
+          target?: number;
           image1?: string;
           image1_url?: string;
           images?: Array<{
@@ -55,16 +65,29 @@ const CompletedRaffles = () => {
 
         const completed = (data as ApiRaffle[]).filter((raffle) => {
           return new Date(raffle.ending_date) <= now && raffle.approve_status === 'approved';
-        }).map((raffle) => ({
-          id: raffle.id,
-          title: raffle.title || raffle.host_name || 'Untitled Raffle',
-          prize: raffle.prize || raffle.description || 'No prize specified',
-          winner: raffle.winner_name || 'TBA',
-          totalTickets: raffle.total_tickets ?? 0,
-          ticketsSold: raffle.tickets_sold ?? 0,
-          drawDate: raffle.ending_date,
-          imageUrl: raffle.image1 || '/images/default.png',
-        }));
+        }).map((raffle) => {
+          const ticketPrice = parseFloat(raffle.ticket_price?.toString() || '0') || 0;
+          const ticketsSold = raffle.tickets_sold ?? 0;
+          const ticketRevenue = ticketPrice * ticketsSold;
+          const currentAmount = parseFloat((raffle.current_amount ?? 0).toString()) || 0;
+          const donationAmount = Math.max(0, currentAmount - ticketRevenue);
+          
+          return {
+            id: raffle.id,
+            title: raffle.title || raffle.host_name || 'Untitled Raffle',
+            prize: raffle.prize || raffle.description || 'No prize specified',
+            winner: raffle.winner_name || 'TBA',
+            totalTickets: raffle.total_tickets ?? 0,
+            ticketsSold: ticketsSold,
+            drawDate: raffle.ending_date,
+            imageUrl: raffle.image1 || '/images/default.png',
+            type: raffle.type,
+            currentAmount: currentAmount,
+            ticketRevenue: ticketRevenue,
+            donationAmount: donationAmount,
+            target: raffle.target ?? 0,
+          };
+        });
         setCompletedRaffles(completed);
       } catch {
         setError('Failed to load completed raffles.');
@@ -119,20 +142,81 @@ const CompletedRaffles = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {completedRaffles.map((raffle) => (
             <div key={raffle.id} className="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-200 hover:scale-[1.02]">
-              <img src={raffle.imageUrl} alt={raffle.title} className="w-full h-48 object-cover" />
-              <div className="p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">{raffle.title}</h2>
-                <p className="text-lg text-blue-700 mb-4 font-semibold">{raffle.prize}</p>
-                <div className="mb-4">
-                  <p className="text-gray-700 text-sm"><strong>Winner:</strong> <span className="font-semibold text-green-600">{raffle.winner}</span></p>
-                  <p className="text-gray-700 text-sm"><strong>Draw Date:</strong> {raffle.drawDate}</p>
+              <div className="relative">
+                <img src={raffle.imageUrl} alt={raffle.title} className="w-full h-48 object-cover" />
+                {/* Campaign type badge */}
+                <div className="absolute top-2 left-2">
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                    raffle.type === 'raffle' 
+                      ? 'bg-purple-100 text-purple-800' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {raffle.type === 'raffle' ? '🎟️ Raffle' : '💝 Fundraising'}
+                  </span>
                 </div>
-                <div className="flex justify-between items-center text-sm text-gray-600">
-                  <span>Tickets Sold: <span className="font-semibold">{raffle.ticketsSold}</span> / {raffle.totalTickets}</span>
-                  {raffle.ticketsSold === raffle.totalTickets && (
-                    <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">SOLD OUT</span>
-                  )}
+                <div className="absolute top-2 right-2">
+                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
+                    COMPLETED
+                  </span>
                 </div>
+              </div>                <div className="p-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{raffle.title}</h2>
+                  <p className="text-lg text-blue-700 mb-4 font-semibold">{raffle.prize}</p>
+                  <div className="mb-4 space-y-2">
+                    <p className="text-gray-700 text-sm">
+                      <strong>Winner:</strong> <span className="font-semibold text-green-600">{raffle.winner}</span>
+                    </p>
+                    <p className="text-gray-700 text-sm">
+                      <strong>Draw Date:</strong> {raffle.drawDate}
+                    </p>
+                    <p className="text-gray-700 text-sm">
+                      <strong>Total Collected:</strong> <span className="font-semibold text-green-600">${(raffle.currentAmount || 0).toFixed(2)}</span>
+                      {raffle.type === 'raffle' && (raffle.donationAmount || 0) > 0 && (
+                        <span className="text-xs text-gray-500 block ml-2">
+                          ${(raffle.ticketRevenue || 0).toFixed(2)} from tickets + ${(raffle.donationAmount || 0).toFixed(2)} from donations
+                        </span>
+                      )}
+                    </p>
+                    {raffle.target > 0 && (
+                      <p className="text-gray-700 text-sm">
+                        <strong>Goal Achievement:</strong> <span className="font-semibold">{Math.round(((raffle.currentAmount || 0) / raffle.target) * 100)}%</span> of ${raffle.target.toLocaleString()}
+                      </p>
+                    )}
+                  </div>                  <div className="flex justify-between items-center text-sm text-gray-600">
+                    {raffle.type === 'raffle' ? (
+                      <div className="w-full space-y-1">
+                        <div className="flex justify-between">
+                          <span>Tickets Sold: <span className="font-semibold">{raffle.ticketsSold}</span> / {raffle.totalTickets}</span>
+                          {raffle.ticketsSold === raffle.totalTickets && (
+                            <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">SOLD OUT</span>
+                          )}
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full" 
+                            style={{ width: `${raffle.totalTickets ? (raffle.ticketsSold / raffle.totalTickets) * 100 : 0}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full space-y-1">
+                        <div className="flex justify-between">
+                          <span>Amount Raised: <span className="font-semibold">${(raffle.currentAmount || 0)?.toLocaleString()}</span></span>
+                          {raffle.target > 0 && (raffle.currentAmount || 0) >= raffle.target && (
+                            <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">GOAL REACHED!</span>
+                          )}
+                        </div>
+                        {raffle.target > 0 && (
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-600 h-2 rounded-full" 
+                              style={{ width: `${Math.min(((raffle.currentAmount || 0) / raffle.target) * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
               </div>
             </div>
           ))}

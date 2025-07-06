@@ -16,6 +16,10 @@ interface LiveRaffle {
   imageUrl: string;
   category: string;
   target: number;
+  type: 'raffle' | 'fundraising';
+  currentAmount: number; // Total money collected (tickets + donations)
+  ticketRevenue: number; // Money from ticket sales only
+  donationAmount: number; // Money from donations only
   images?: Array<{
     id: number;
     path: string;
@@ -31,6 +35,8 @@ const LiveRaffles = () => {
   const [selectedRaffle, setSelectedRaffle] = useState<LiveRaffle | null>(null);
   const [showRaffleModal, setShowRaffleModal] = useState(false);
   const [ticketQuantity, setTicketQuantity] = useState(1);
+  const [donationAmount, setDonationAmount] = useState<string>('');
+  const [donationMode, setDonationMode] = useState(false); // Toggle between ticket purchase and donation
   const [purchasing, setPurchasing] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState<string | null>(null);
@@ -52,7 +58,9 @@ const LiveRaffles = () => {
           tickets_sold?: number;
           total_tickets?: number;
           ending_date: string;
-          ticket_price?: number;
+          ticket_price?: number | string;
+          type: 'raffle' | 'fundraising';
+          current_amount?: number;
           image1?: string;
           image1_url?: string;
           images?: Array<{
@@ -74,23 +82,35 @@ const LiveRaffles = () => {
         const live = data.filter((raffle: RaffleApiResponse) => {
           // Example: raffle.approve_status === 'approved' && new Date(raffle.ending_date) > now
           return new Date(raffle.ending_date) > now && raffle.approve_status === 'approved';
-        }).map((raffle: RaffleApiResponse) => ({
-          id: raffle.id,
-          title: raffle.title || raffle.host_name || 'Untitled Raffle',
-          prize: raffle.prize || raffle.description || 'No prize specified',
-          description: raffle.description || '',
-          hostName: raffle.host_name || 'Unknown Host',
-          target: raffle.target || 0,
-          currentTickets: raffle.tickets_sold ?? 0,
-          totalTickets: raffle.total_tickets ?? 0,
-          endDate: raffle.ending_date,
-          ticketPrice: raffle.ticket_price ?? 0,
-          imageUrl: raffle.image1_url || 
-                   (raffle.images && raffle.images.length > 0 ? raffle.images[0].url : null) ||
-                   '/images/default-raffle.png',
-          category: raffle.category?.category_name || 'N/A',
-          images: raffle.images || [],
-        }));
+        }).map((raffle: RaffleApiResponse) => {
+          const ticketPrice = typeof raffle.ticket_price === 'number' ? raffle.ticket_price : parseFloat(raffle.ticket_price?.toString() || '0') || 0;
+          const ticketsSold = raffle.tickets_sold ?? 0;
+          const ticketRevenue = ticketPrice * ticketsSold;
+          const currentAmount = parseFloat((raffle.current_amount ?? 0).toString()) || 0;
+          const donationAmount = Math.max(0, currentAmount - ticketRevenue);
+          
+          return {
+            id: raffle.id,
+            title: raffle.title || raffle.host_name || 'Untitled Raffle',
+            prize: raffle.prize || raffle.description || 'No prize specified',
+            description: raffle.description || '',
+            hostName: raffle.host_name || 'Unknown Host',
+            target: raffle.target || 0,
+            currentTickets: ticketsSold,
+            totalTickets: raffle.total_tickets ?? 0,
+            endDate: raffle.ending_date,
+            ticketPrice: ticketPrice,
+            type: raffle.type,
+            currentAmount: currentAmount,
+            ticketRevenue: ticketRevenue,
+            donationAmount: donationAmount,
+            imageUrl: raffle.image1_url || 
+                     (raffle.images && raffle.images.length > 0 ? raffle.images[0].url : null) ||
+                     '/images/default-raffle.png',
+            category: raffle.category?.category_name || 'N/A',
+            images: raffle.images || [],
+          };
+        });
 
         setLiveRaffles(live);
       } catch (err) {
@@ -116,6 +136,8 @@ const LiveRaffles = () => {
     setSelectedRaffle(raffle);
     setShowRaffleModal(true);
     setTicketQuantity(1);
+    setDonationAmount('');
+    setDonationMode(raffle.type === 'fundraising');
     setPurchaseError(null);
     setPurchaseSuccess(null);
   };
@@ -124,6 +146,8 @@ const LiveRaffles = () => {
     setShowRaffleModal(false);
     setSelectedRaffle(null);
     setTicketQuantity(1);
+    setDonationAmount('');
+    setDonationMode(false);
     setPurchaseError(null);
     setPurchaseSuccess(null);
   };
@@ -168,6 +192,57 @@ const LiveRaffles = () => {
 
     } catch (err) {
       setPurchaseError(err instanceof Error ? err.message : 'Failed to purchase tickets');
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const handleDonation = async () => {
+    if (!selectedRaffle || !user) {
+      setPurchaseError('Please log in to make a donation');
+      return;
+    }
+
+    const amount = parseFloat(donationAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setPurchaseError('Please enter a valid donation amount');
+      return;
+    }
+
+    setPurchasing(true);
+    setPurchaseError(null);
+    setPurchaseSuccess(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/raffles/${selectedRaffle.id}/donate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          amount: amount,
+          user_id: user.user_id,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Failed to process donation');
+      }
+
+      const result = await response.json();
+      setPurchaseSuccess(`Thank you for your donation of $${amount.toFixed(2)}! ${result.message || ''}`);
+      setDonationAmount('');
+      
+      // Refresh the raffles to show updated amounts
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+
+    } catch (err) {
+      setPurchaseError(err instanceof Error ? err.message : 'Failed to process donation');
     } finally {
       setPurchasing(false);
     }
@@ -255,17 +330,76 @@ const LiveRaffles = () => {
                       {raffle.category}
                     </span>
                   </div>
+                  {/* Campaign type badge */}
+                  <div className="absolute top-2 left-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      raffle.type === 'raffle' 
+                        ? 'bg-purple-100 text-purple-800' 
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {raffle.type === 'raffle' ? '🎟️ Raffle' : '💝 Fundraising'}
+                    </span>
+                  </div>
                 </div>
                 <div className="p-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">{raffle.title}</h2>
                   <p className="text-lg text-blue-700 mb-4 font-semibold">{raffle.prize}</p>
 
                   <div className="mb-4">
-                    <p className="text-gray-700 text-sm">Tickets: <span className="font-semibold">{raffle.currentTickets}</span> / {raffle.totalTickets}</p>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
-                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
-                    </div>
-                    <p className="text-gray-700 text-sm mt-2">Ticket Price: <span className="font-semibold">${raffle.ticketPrice?.toFixed(2) ?? 'N/A'}</span></p>
+                    {raffle.type === 'raffle' ? (
+                      <>
+                        <div className="space-y-2 mb-3">
+                          <p className="text-gray-700 text-sm">
+                            <span className="font-semibold">Money Collected:</span> ${(raffle.currentAmount || 0).toFixed(2)}
+                            <span className="text-xs text-gray-500 ml-2">
+                              (${(raffle.ticketRevenue || 0).toFixed(2)} from tickets
+                              {(raffle.donationAmount || 0) > 0 && `, $${(raffle.donationAmount || 0).toFixed(2)} from donations`})
+                            </span>
+                          </p>
+                          <p className="text-gray-700 text-sm">Tickets: <span className="font-semibold">{raffle.currentTickets}</span> / {raffle.totalTickets}</p>
+                        </div>
+                        
+                        {/* Money Progress Bar */}
+                        <div className="mb-2">
+                          <div className="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Progress to Goal</span>
+                            <span>{raffle.target ? Math.round(((raffle.currentAmount || 0) / raffle.target) * 100) : 0}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2.5">
+                            <div className="bg-green-600 h-2.5 rounded-full" style={{ 
+                              width: `${raffle.target ? Math.min(((raffle.currentAmount || 0) / raffle.target) * 100, 100) : 0}%` 
+                            }}></div>
+                          </div>
+                          <p className="text-gray-700 text-xs mt-1">Goal: <span className="font-semibold">${raffle.target?.toLocaleString()}</span></p>
+                        </div>
+                        
+                        {/* Ticket Progress Bar */}
+                        <div>
+                          <div className="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Tickets Sold</span>
+                            <span>{raffle.totalTickets ? Math.round((raffle.currentTickets / raffle.totalTickets) * 100) : 0}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${progress}%` }}></div>
+                          </div>
+                        </div>
+                        
+                        <p className="text-gray-700 text-sm mt-2">Ticket Price: <span className="font-semibold">${typeof raffle.ticketPrice === 'number' ? raffle.ticketPrice.toFixed(2) : 'N/A'}</span></p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-gray-700 text-sm">Amount Raised: <span className="font-semibold">${(raffle.currentAmount || 0)?.toLocaleString()}</span></p>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+                          <div className="bg-green-600 h-2.5 rounded-full" style={{ 
+                            width: `${raffle.target ? Math.min(((raffle.currentAmount || 0) / raffle.target) * 100, 100) : 0}%` 
+                          }}></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-600 mt-1">
+                          <span>Goal: <span className="font-semibold">${raffle.target?.toLocaleString()}</span></span>
+                          <span>{raffle.target ? Math.round(((raffle.currentAmount || 0) / raffle.target) * 100) : 0}%</span>
+                        </div>
+                      </>
+                    )}
                     <p className="text-gray-700 text-sm mt-2">
                       Draws in: <span className="font-bold text-red-600">
                         {daysLeft} day{daysLeft !== 1 ? 's' : ''}
@@ -277,7 +411,7 @@ const LiveRaffles = () => {
                     onClick={() => openRaffleModal(raffle)}
                     className="w-full px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 transition-colors"
                   >
-                    Enter Now
+                    {raffle.type === 'raffle' ? 'Enter Now' : 'Donate Now'}
                   </button>
                 </div>
               </div>
@@ -346,29 +480,62 @@ const LiveRaffles = () => {
               {/* Raffle Statistics */}
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">Target Amount</h3>
-                  <p className="text-xl font-bold text-green-600">${selectedRaffle.target.toLocaleString()}</p>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">Total Collected</h3>
+                  <p className="text-xl font-bold text-green-600">${(selectedRaffle.currentAmount || 0).toFixed(2)}</p>
+                  {selectedRaffle.type === 'raffle' && (selectedRaffle.donationAmount || 0) > 0 && (
+                    <p className="text-xs text-gray-500">
+                      ${(selectedRaffle.ticketRevenue || 0).toFixed(2)} tickets + ${(selectedRaffle.donationAmount || 0).toFixed(2)} donations
+                    </p>
+                  )}
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">Ticket Price</h3>
-                  <p className="text-xl font-bold text-blue-600">${selectedRaffle.ticketPrice.toFixed(2)}</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">Tickets Sold</h3>
-                  <p className="text-xl font-bold text-gray-900">
-                    {selectedRaffle.currentTickets} / {selectedRaffle.totalTickets}
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">Target Goal</h3>
+                  <p className="text-xl font-bold text-blue-600">${selectedRaffle.target.toLocaleString()}</p>
+                  <p className="text-xs text-gray-500">
+                    {selectedRaffle.target ? Math.round(((selectedRaffle.currentAmount || 0) / selectedRaffle.target) * 100) : 0}% reached
                   </p>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full" 
-                      style={{ 
-                        width: `${selectedRaffle.totalTickets ? (selectedRaffle.currentTickets / selectedRaffle.totalTickets) * 100 : 0}%` 
-                      }}
-                    ></div>
-                  </div>
                 </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">Draw Date</h3>
+                {selectedRaffle.type === 'raffle' ? (
+                  <>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h3 className="text-sm font-semibold text-gray-600 mb-1">Ticket Price</h3>
+                      <p className="text-xl font-bold text-purple-600">${typeof selectedRaffle.ticketPrice === 'number' ? selectedRaffle.ticketPrice.toFixed(2) : 'N/A'}</p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h3 className="text-sm font-semibold text-gray-600 mb-1">Tickets Sold</h3>
+                      <p className="text-xl font-bold text-gray-900">
+                        {selectedRaffle.currentTickets} / {selectedRaffle.totalTickets}
+                      </p>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full" 
+                          style={{ 
+                            width: `${selectedRaffle.totalTickets ? (selectedRaffle.currentTickets / selectedRaffle.totalTickets) * 100 : 0}%` 
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="bg-gray-50 p-4 rounded-lg col-span-2">
+                    <h3 className="text-sm font-semibold text-gray-600 mb-1">Fundraising Progress</h3>
+                    <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
+                      <div 
+                        className="bg-green-600 h-4 rounded-full flex items-center justify-center text-white text-xs font-semibold" 
+                        style={{ 
+                          width: `${selectedRaffle.target ? Math.min(((selectedRaffle.currentAmount || 0) / selectedRaffle.target) * 100, 100) : 0}%`,
+                          minWidth: '2rem'
+                        }}
+                      >
+                        {selectedRaffle.target ? Math.round(((selectedRaffle.currentAmount || 0) / selectedRaffle.target) * 100) : 0}%
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="bg-gray-50 p-4 rounded-lg col-span-2">
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
+                    {selectedRaffle.type === 'raffle' ? 'Draw Date' : 'End Date'}
+                  </h3>
                   <p className="text-xl font-bold text-red-600">
                     {calculateDaysLeft(selectedRaffle.endDate)} day{calculateDaysLeft(selectedRaffle.endDate) !== 1 ? 's' : ''} left
                   </p>
@@ -378,7 +545,35 @@ const LiveRaffles = () => {
 
               {/* Purchase Section */}
               <div className="border-t pt-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Purchase Tickets</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {selectedRaffle.type === 'raffle' ? 'Purchase Tickets or Donate' : 'Make a Donation'}
+                  </h2>
+                  {selectedRaffle.type === 'raffle' && (
+                    <div className="flex bg-gray-100 rounded-lg p-1">
+                      <button
+                        onClick={() => setDonationMode(false)}
+                        className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                          !donationMode 
+                            ? 'bg-white text-blue-600 shadow-sm' 
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        🎟️ Buy Tickets
+                      </button>
+                      <button
+                        onClick={() => setDonationMode(true)}
+                        className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                          donationMode 
+                            ? 'bg-white text-green-600 shadow-sm' 
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        💝 Donate
+                      </button>
+                    </div>
+                  )}
+                </div>
                 
                 {purchaseSuccess && (
                   <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
@@ -394,7 +589,7 @@ const LiveRaffles = () => {
 
                 {!user ? (
                   <div className="text-center p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg">
-                    <p className="mb-2">Please log in to purchase tickets</p>
+                    <p className="mb-2">Please log in to {selectedRaffle.type === 'raffle' ? 'purchase tickets or donate' : 'make a donation'}</p>
                     <button
                       onClick={() => window.location.href = '/login'}
                       className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
@@ -402,7 +597,69 @@ const LiveRaffles = () => {
                       Log In
                     </button>
                   </div>
+                ) : (donationMode || selectedRaffle.type === 'fundraising') ? (
+                  /* Donation Section */
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="donation-amount" className="block text-sm font-medium text-gray-700 mb-2">
+                        Donation Amount ($)
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-3 text-gray-500">$</span>
+                        <input
+                          id="donation-amount"
+                          type="number"
+                          min="1"
+                          step="0.01"
+                          value={donationAmount}
+                          onChange={(e) => setDonationAmount(e.target.value)}
+                          className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          placeholder="Enter amount"
+                          disabled={purchasing}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Quick donation amounts */}
+                    <div className="grid grid-cols-4 gap-2">
+                      {[5, 10, 25, 50].map((amount) => (
+                        <button
+                          key={amount}
+                          onClick={() => setDonationAmount(amount.toString())}
+                          className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
+                          disabled={purchasing}
+                        >
+                          ${amount}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg">
+                      <span className="text-lg font-semibold text-green-800">Your Donation:</span>
+                      <span className="text-2xl font-bold text-green-600">
+                        ${donationAmount ? parseFloat(donationAmount).toFixed(2) : '0.00'}
+                      </span>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={closeRaffleModal}
+                        className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                        disabled={purchasing}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleDonation}
+                        disabled={purchasing || !donationAmount || parseFloat(donationAmount) <= 0}
+                        className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {purchasing ? 'Processing...' : `Donate $${donationAmount ? parseFloat(donationAmount).toFixed(2) : '0.00'}`}
+                      </button>
+                    </div>
+                  </div>
                 ) : (
+                  /* Ticket Purchase Section */
                   <div className="space-y-4">
                     <div className="flex items-center gap-4">
                       <label htmlFor="quantity" className="text-sm font-medium text-gray-700">
@@ -436,10 +693,10 @@ const LiveRaffles = () => {
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                      <span className="text-lg font-semibold">Total Cost:</span>
-                      <span className="text-2xl font-bold text-green-600">
-                        ${(selectedRaffle.ticketPrice * ticketQuantity).toFixed(2)}
+                    <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg">
+                      <span className="text-lg font-semibold text-blue-800">Total Cost:</span>
+                      <span className="text-2xl font-bold text-blue-600">
+                        ${typeof selectedRaffle.ticketPrice === 'number' ? (selectedRaffle.ticketPrice * ticketQuantity).toFixed(2) : 'N/A'}
                       </span>
                     </div>
 
@@ -454,7 +711,7 @@ const LiveRaffles = () => {
                       <button
                         onClick={handlePurchaseTickets}
                         disabled={purchasing}
-                        className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {purchasing ? 'Processing...' : `Purchase ${ticketQuantity} Ticket${ticketQuantity > 1 ? 's' : ''}`}
                       </button>
