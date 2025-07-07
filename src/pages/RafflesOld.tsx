@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { Hero } from "../components/main/Hero";
+import { RaffleCard } from "../components/main/RaffleCard";
+import { FilterSearch } from "../components/main/FilterSearch";
+import { RafflePaymentExample } from "../components/payments/RafflePaymentExample";
 import { API_BASE_URL } from "../constants/constants";
+import { ChevronLeft, ChevronRight, X, Loader2 } from "lucide-react";
 
 interface Raffle {
   id: number;
@@ -19,43 +23,37 @@ interface Raffle {
   current_amount?: number;
   image1?: string;
   image1_url?: string;
+  state_raffle_hosted?: string;
   category?: {
     id: number;
     category_name: string;
   };
-  // Legacy fields for compatibility
-  amount?: number;
-  endsIn?: string;
-  date?: string;
-  image?: string;
-  organization?: string;
-  targetAmount?: number;
-  hostName?: string;
-  startDate?: string;
-  endDate?: string;
+}
+
+interface Category {
+  id: number;
+  category_name: string;
 }
 
 export const Raffles = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterDate, setFilterDate] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterLocation, setFilterLocation] = useState("");
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 100]);
+  const [sortBy, setSortBy] = useState("newest");
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRaffle, setSelectedRaffle] = useState<Raffle | null>(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [raffles, setRaffles] = useState<Raffle[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newRaffle, setNewRaffle] = useState({
-    title: "",
-    description: "",
-    starting_date: "",
-    ending_date: "",
-    target: "",
-    type: "raffle" as "raffle" | "fundraising",
-    ticket_price: "",
-    max_tickets: "",
-    host_name: "",
-  });
+  const [totalCount, setTotalCount] = useState(0);
+
+  const rafflesPerPage = 12;
   const itemsPerPage = 3;
 
   useEffect(() => {
@@ -337,7 +335,7 @@ export const Raffles = () => {
               </button>
             </div>
             {showCreateModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="fixed inset-0 bg-white/10 backdrop-blur-sm transition-opacity flex items-center justify-center z-50">
                 <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
                   <h2 className="text-2xl font-bold mb-6">Create New Campaign</h2>
                   

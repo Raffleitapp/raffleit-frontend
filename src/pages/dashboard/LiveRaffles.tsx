@@ -106,7 +106,7 @@ const LiveRaffles = () => {
             donationAmount: donationAmount,
             imageUrl: raffle.image1_url || 
                      (raffle.images && raffle.images.length > 0 ? raffle.images[0].url : null) ||
-                     '/images/default-raffle.png',
+                     '/images/tb2.png',
             category: raffle.category?.category_name || 'N/A',
             images: raffle.images || [],
           };
@@ -164,7 +164,7 @@ const LiveRaffles = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/tickets`, {
+      const response = await fetch(`${API_BASE_URL}/payments/tickets/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -173,25 +173,25 @@ const LiveRaffles = () => {
         body: JSON.stringify({
           raffle_id: selectedRaffle.id,
           quantity: ticketQuantity,
-          user_id: user.user_id,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.text();
-        throw new Error(errorData || 'Failed to purchase tickets');
+        throw new Error(errorData || 'Failed to create payment checkout');
       }
 
       const result = await response.json();
-      setPurchaseSuccess(`Successfully purchased ${ticketQuantity} ticket(s)! Your ticket numbers: ${result.ticket_numbers?.join(', ') || 'N/A'}`);
       
-      // Refresh the raffles to show updated ticket counts
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      if (result.success && result.checkout_url) {
+        // Redirect to Paddle checkout
+        window.location.href = result.checkout_url;
+      } else {
+        throw new Error(result.error || 'Failed to create payment checkout');
+      }
 
     } catch (err) {
-      setPurchaseError(err instanceof Error ? err.message : 'Failed to purchase tickets');
+      setPurchaseError(err instanceof Error ? err.message : 'Failed to create payment checkout');
     } finally {
       setPurchasing(false);
     }
@@ -215,34 +215,34 @@ const LiveRaffles = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/raffles/${selectedRaffle.id}/donate`, {
+      const response = await fetch(`${API_BASE_URL}/payments/donations/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
+          raffle_id: selectedRaffle.id,
           amount: amount,
-          user_id: user.user_id,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.text();
-        throw new Error(errorData || 'Failed to process donation');
+        throw new Error(errorData || 'Failed to create donation checkout');
       }
 
       const result = await response.json();
-      setPurchaseSuccess(`Thank you for your donation of $${amount.toFixed(2)}! ${result.message || ''}`);
-      setDonationAmount('');
       
-      // Refresh the raffles to show updated amounts
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      if (result.success && result.checkout_url) {
+        // Redirect to Paddle checkout
+        window.location.href = result.checkout_url;
+      } else {
+        throw new Error(result.error || 'Failed to create donation checkout');
+      }
 
     } catch (err) {
-      setPurchaseError(err instanceof Error ? err.message : 'Failed to process donation');
+      setPurchaseError(err instanceof Error ? err.message : 'Failed to create donation checkout');
     } finally {
       setPurchasing(false);
     }
@@ -313,31 +313,31 @@ const LiveRaffles = () => {
                     className="w-full h-48 object-cover" 
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = '/images/default-raffle.png';
+                      target.src = '/images/tb2.png';
                     }}
                   />
                   {/* Additional Images Indicator */}
                   {raffle.images && raffle.images.length > 1 && (
                     <div className="absolute bottom-2 left-2">
-                      <span className="bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
+                      <span className="backdrop-blur bg-opacity-70 text-white px-2 py-1 rounded text-xs">
                         📷 {raffle.images.length} photos
                       </span>
                     </div>
                   )}
-                  {/* Category Badge */}
-                  <div className="absolute top-2 right-2">
-                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
-                      {raffle.category}
-                    </span>
-                  </div>
-                  {/* Campaign type badge */}
+                  {/* Type Badge */}
                   <div className="absolute top-2 left-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                       raffle.type === 'raffle' 
                         ? 'bg-purple-100 text-purple-800' 
                         : 'bg-green-100 text-green-800'
                     }`}>
-                      {raffle.type === 'raffle' ? '🎟️ Raffle' : '💝 Fundraising'}
+                      {raffle.type === 'raffle' ? 'Raffle' : 'Fundraising'}
+                    </span>
+                  </div>
+                  {/* Category Badge */}
+                  <div className="absolute top-2 right-2">
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
+                      {raffle.category}
                     </span>
                   </div>
                 </div>
@@ -422,7 +422,7 @@ const LiveRaffles = () => {
 
       {/* Raffle Details and Purchase Modal */}
       {showRaffleModal && selectedRaffle && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 backdrop-blur-sm transition-opacity flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="relative">
@@ -432,19 +432,19 @@ const LiveRaffles = () => {
                 className="w-full h-64 object-cover rounded-t-lg"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = '/images/default-raffle.png';
+                  target.src = '/images/tb2.png';
                 }}
               />
               <button
                 onClick={closeRaffleModal}
-                className="absolute top-4 right-4 bg-black bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-75 text-xl"
+                className="absolute top-4 right-4 backdrop-blur bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-75 text-xl"
               >
                 ✕
               </button>
               {/* Additional Images Indicator */}
               {selectedRaffle.images && selectedRaffle.images.length > 1 && (
                 <div className="absolute bottom-4 left-4">
-                  <span className="bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm">
+                  <span className="backdrop-blur bg-opacity-70 text-white px-3 py-1 rounded text-sm">
                     📷 {selectedRaffle.images.length} photos
                   </span>
                 </div>

@@ -144,16 +144,6 @@ const CompletedRaffles = () => {
             <div key={raffle.id} className="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-200 hover:scale-[1.02]">
               <div className="relative">
                 <img src={raffle.imageUrl} alt={raffle.title} className="w-full h-48 object-cover" />
-                {/* Campaign type badge */}
-                <div className="absolute top-2 left-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                    raffle.type === 'raffle' 
-                      ? 'bg-purple-100 text-purple-800' 
-                      : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {raffle.type === 'raffle' ? '🎟️ Raffle' : '💝 Fundraising'}
-                  </span>
-                </div>
                 <div className="absolute top-2 right-2">
                   <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
                     COMPLETED
