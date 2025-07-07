@@ -300,9 +300,6 @@ const LiveRaffles = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {liveRaffles.map((raffle) => {
             const daysLeft = calculateDaysLeft(raffle.endDate);
-            const progress = raffle.totalTickets
-              ? (raffle.currentTickets / raffle.totalTickets) * 100
-              : 0;
 
             return (
               <div key={raffle.id} className="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-200 hover:scale-[1.02]">
@@ -343,76 +340,46 @@ const LiveRaffles = () => {
                 </div>
                 <div className="p-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">{raffle.title}</h2>
-                  <p className="text-lg text-blue-700 mb-4 font-semibold">{raffle.prize}</p>
+                  <p className="text-base text-blue-700 mb-4 font-semibold">{raffle.prize}</p>
 
                   <div className="mb-4">
                     {raffle.type === 'raffle' ? (
                       <>
-                        <div className="space-y-2 mb-3">
-                          <p className="text-gray-700 text-sm">
-                            <span className="font-semibold">Money Collected:</span> ${(raffle.currentAmount || 0).toFixed(2)}
-                            <span className="text-xs text-gray-500 ml-2">
-                              (${(raffle.ticketRevenue || 0).toFixed(2)} from tickets
-                              {(raffle.donationAmount || 0) > 0 && `, $${(raffle.donationAmount || 0).toFixed(2)} from donations`})
-                            </span>
-                          </p>
-                          <p className="text-gray-700 text-sm">Tickets: <span className="font-semibold">{raffle.currentTickets}</span> / {raffle.totalTickets}</p>
-                        </div>
-                        
-                        {/* Money Progress Bar */}
-                        <div className="mb-2">
-                          <div className="flex justify-between text-xs text-gray-600 mb-1">
-                            <span>Progress to Goal</span>
-                            <span>{raffle.target ? Math.round(((raffle.currentAmount || 0) / raffle.target) * 100) : 0}%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2.5">
-                            <div className="bg-green-600 h-2.5 rounded-full" style={{ 
-                              width: `${raffle.target ? Math.min(((raffle.currentAmount || 0) / raffle.target) * 100, 100) : 0}%` 
-                            }}></div>
-                          </div>
-                          <p className="text-gray-700 text-xs mt-1">Goal: <span className="font-semibold">${raffle.target?.toLocaleString()}</span></p>
-                        </div>
-                        
-                        {/* Ticket Progress Bar */}
-                        <div>
-                          <div className="flex justify-between text-xs text-gray-600 mb-1">
-                            <span>Tickets Sold</span>
-                            <span>{raffle.totalTickets ? Math.round((raffle.currentTickets / raffle.totalTickets) * 100) : 0}%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${progress}%` }}></div>
-                          </div>
-                        </div>
-                        
-                        <p className="text-gray-700 text-sm mt-2">Ticket Price: <span className="font-semibold">${typeof raffle.ticketPrice === 'number' ? raffle.ticketPrice.toFixed(2) : 'N/A'}</span></p>
+                        <p className="text-gray-700 text-sm mb-2">
+                          <span className="font-semibold">Ticket Price:</span> ${typeof raffle.ticketPrice === 'number' ? raffle.ticketPrice.toFixed(2) : 'N/A'}
+                        </p>
+                        <p className="text-gray-700 text-sm mb-3">
+                          <span className="font-semibold">Tickets:</span> {raffle.currentTickets} / {raffle.totalTickets}
+                        </p>
                       </>
                     ) : (
                       <>
-                        <p className="text-gray-700 text-sm">Amount Raised: <span className="font-semibold">${(raffle.currentAmount || 0)?.toLocaleString()}</span></p>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
-                          <div className="bg-green-600 h-2.5 rounded-full" style={{ 
-                            width: `${raffle.target ? Math.min(((raffle.currentAmount || 0) / raffle.target) * 100, 100) : 0}%` 
-                          }}></div>
-                        </div>
-                        <div className="flex justify-between text-xs text-gray-600 mt-1">
-                          <span>Goal: <span className="font-semibold">${raffle.target?.toLocaleString()}</span></span>
-                          <span>{raffle.target ? Math.round(((raffle.currentAmount || 0) / raffle.target) * 100) : 0}%</span>
-                        </div>
+                        <p className="text-gray-700 text-sm mb-3">
+                          <span className="font-semibold">Goal:</span> ${raffle.target.toLocaleString()}
+                        </p>
                       </>
                     )}
-                    <p className="text-gray-700 text-sm mt-2">
-                      Draws in: <span className="font-bold text-red-600">
-                        {daysLeft} day{daysLeft !== 1 ? 's' : ''}
+                    <p className="text-gray-700 text-sm">
+                      <span className="font-bold text-red-600">
+                        {daysLeft} day{daysLeft !== 1 ? 's' : ''} left
                       </span>
                     </p>
                   </div>
 
-                  <button
-                    onClick={() => openRaffleModal(raffle)}
-                    className="w-full px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 transition-colors"
-                  >
-                    {raffle.type === 'raffle' ? 'Enter Now' : 'Donate Now'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => openRaffleModal(raffle)}
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      View Details
+                    </button>
+                    <button
+                      onClick={() => openRaffleModal(raffle)}
+                      className="flex-1 px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      {raffle.type === 'raffle' ? 'Enter Now' : 'Donate Now'}
+                    </button>
+                  </div>
                 </div>
               </div>
             );
