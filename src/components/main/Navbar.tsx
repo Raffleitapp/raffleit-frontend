@@ -77,6 +77,7 @@ const Navbar = () => {
 
     const menuItems = [
         { label: "Home", href: "/" },
+        { label: "Raffles", href: "/raffles" },
         { label: "About", href: "/about" },
         { label: "Contact", href: "/contact" },
         { label: "How it works", href: "/howitworks" },
@@ -567,7 +568,6 @@ const Navbar = () => {
                                                 }`}
                                                 onClick={() => setNewRaffle({ ...newRaffle, type: 'raffle' })}
                                             >
-                                                <div className="text-lg mb-1">🎟️</div>
                                                 <div className="font-medium">Raffle</div>
                                                 <div className="text-xs text-gray-600">Sell tickets for prizes</div>
                                             </button>
@@ -580,7 +580,6 @@ const Navbar = () => {
                                                 }`}
                                                 onClick={() => setNewRaffle({ ...newRaffle, type: 'fundraising' })}
                                             >
-                                                <div className="text-lg mb-1">💝</div>
                                                 <div className="font-medium">Fundraising</div>
                                                 <div className="text-xs text-gray-600">Accept donations</div>
                                             </button>

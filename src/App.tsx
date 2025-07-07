@@ -12,6 +12,7 @@ import { HowItWorks } from './pages/HowItWorks';
 import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
 import { Raffles } from './pages/Raffles';
+import PublicRaffles from './pages/PublicRaffles';
 import { AdminDashboard } from './pages/dashboard/AdminDashboard';
 import CompletedRaffles from './pages/dashboard/CompletedRaffles';
 import LiveRaffles from './pages/dashboard/LiveRaffles';
@@ -53,8 +54,8 @@ function PublicLayout() {
         <Route path="/howitworks" element={<HowItWorks />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/raffles" element={<Raffles />} />
-        <Route path="/raffles/:id" element={<Raffles />} />
+        <Route path="/raffles" element={<PublicRaffles />} />
+        <Route path="/raffles/:id" element={<PublicRaffles />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {showLayout && <Footer />}

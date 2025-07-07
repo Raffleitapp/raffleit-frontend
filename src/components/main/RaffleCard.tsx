@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, MapPin, Users, Target } from 'lucide-react';
 
 interface RaffleCardProps {
@@ -30,6 +30,8 @@ interface RaffleCardProps {
 }
 
 export const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onSelect, onPurchase }) => {
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -45,13 +47,33 @@ export const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onSelect, onPurc
     }).format(amount);
   };
 
-  const getDaysRemaining = (endDate: string) => {
-    const end = new Date(endDate);
-    const now = new Date();
-    const diffTime = end.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
+  // Calculate time remaining for countdown
+  const calculateTimeLeft = (endDate: string) => {
+    const difference = new Date(endDate).getTime() - new Date().getTime();
+    
+    if (difference > 0) {
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000),
+      };
+    }
+    
+    return { days: 0, hours: 0, minutes: 0, seconds: 0 };
   };
+
+  // Update timer every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft(raffle.ending_date));
+    }, 1000);
+
+    // Set initial time
+    setTimeLeft(calculateTimeLeft(raffle.ending_date));
+
+    return () => clearInterval(timer);
+  }, [raffle.ending_date]);
 
   const getProgressPercentage = () => {
     if (raffle.type === 'fundraising') {
@@ -61,9 +83,8 @@ export const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onSelect, onPurc
     }
   };
 
-  const daysRemaining = getDaysRemaining(raffle.ending_date);
   const progressPercentage = getProgressPercentage();
-  const isExpired = daysRemaining === 0;
+  const isExpired = timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0;
 
   return (
     <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group">
@@ -102,16 +123,16 @@ export const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onSelect, onPurc
         
 
 
-        {/* Days Remaining */}
+        {/* Time Remaining */}
         <div className="absolute bottom-3 right-3">
           <div className={`px-3 py-1 rounded-full text-xs font-semibold shadow-lg backdrop-blur-sm ${
             isExpired 
               ? 'bg-red-500/90 text-white border border-red-400/50' 
-              : daysRemaining <= 7 
+              : timeLeft.days <= 7 
                 ? 'bg-orange-500/90 text-white border border-orange-400/50' 
                 : 'bg-green-500/90 text-white border border-green-400/50'
           }`}>
-            {isExpired ? 'Expired' : `${daysRemaining} days left`}
+            {isExpired ? 'Expired' : `${timeLeft.days}d ${timeLeft.hours}h ${timeLeft.minutes}m ${timeLeft.seconds}s`}
           </div>
         </div>
       </div>

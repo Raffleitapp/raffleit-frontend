@@ -68,7 +68,7 @@ const PaymentSuccess: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center">
           <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-red-600 text-2xl">⚠️</span>
+            <span className="text-red-600 text-2xl">!</span>
           </div>
           <h2 className="text-xl font-semibold text-red-600 mb-2">Payment Error</h2>
           <p className="text-gray-600 mb-6">{error}</p>

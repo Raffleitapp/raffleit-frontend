@@ -56,6 +56,46 @@ export function Raffles() {
     target: "",
   });
 
+  const calculateTimeLeft = (endDate: string) => {
+    const now = new Date().getTime();
+    const end = new Date(endDate).getTime();
+    const difference = end - now;
+
+    if (difference > 0) {
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000),
+        total: difference
+      };
+    }
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
+  };
+
+  // Countdown timer state and effect
+  const [timeLeft, setTimeLeft] = useState<{[key: number]: ReturnType<typeof calculateTimeLeft>}>({});
+
+  useEffect(() => {
+    // Initial calculation
+    const initialTimeLeft: {[key: number]: ReturnType<typeof calculateTimeLeft>} = {};
+    raffles.forEach(raffle => {
+      initialTimeLeft[raffle.id] = calculateTimeLeft(raffle.ending_date);
+    });
+    setTimeLeft(initialTimeLeft);
+
+    // Set up timer to update every second
+    const timer = setInterval(() => {
+      const newTimeLeft: {[key: number]: ReturnType<typeof calculateTimeLeft>} = {};
+      raffles.forEach(raffle => {
+        newTimeLeft[raffle.id] = calculateTimeLeft(raffle.ending_date);
+      });
+      setTimeLeft(newTimeLeft);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [raffles]);
+
   useEffect(() => {
     const fetchRaffles = async () => {
       setLoading(true);
@@ -172,7 +212,6 @@ export function Raffles() {
 
       {raffles.length === 0 ? (
         <div className="bg-white p-8 rounded-lg shadow-md text-center">
-          <div className="text-6xl text-gray-300 mb-4">🎟️</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">No raffles yet</h3>
           <p className="text-gray-600 mb-6">Start by creating your first raffle to engage your community!</p>
           <button
@@ -219,7 +258,7 @@ export function Raffles() {
                   {raffle.images && raffle.images.length > 1 && (
                     <div className="absolute bottom-2 left-2">
                       <span className="bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
-                        📷 {raffle.images.length} photos
+                        {raffle.images.length} photos
                       </span>
                     </div>
                   )}
@@ -232,7 +271,7 @@ export function Raffles() {
                     <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
                       raffle.type === 'raffle' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
                     }`}>
-                      {raffle.type === 'raffle' ? '🎟️ Raffle' : '💝 Fundraising'}
+                      {raffle.type === 'raffle' ? 'Raffle' : 'Fundraising'}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 mb-2">Host: {raffle.host_name}</p>
@@ -246,6 +285,25 @@ export function Raffles() {
                       {raffle.category.category_name}
                     </p>
                   )}
+
+                  {/* Countdown Timer */}
+                  <div className="mb-3">
+                    {timeLeft[raffle.id] && timeLeft[raffle.id].total > 0 ? (
+                      <div className="bg-red-50 p-2 rounded">
+                        <p className="text-xs text-red-800 font-semibold mb-1">Time Remaining:</p>
+                        <div className="flex gap-2 text-xs">
+                          <span className="bg-red-100 px-1 rounded">{timeLeft[raffle.id].days}d</span>
+                          <span className="bg-red-100 px-1 rounded">{timeLeft[raffle.id].hours}h</span>
+                          <span className="bg-red-100 px-1 rounded">{timeLeft[raffle.id].minutes}m</span>
+                          <span className="bg-red-100 px-1 rounded">{timeLeft[raffle.id].seconds}s</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 p-2 rounded">
+                        <p className="text-xs text-gray-600 font-semibold">Campaign has ended</p>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="space-y-2 mb-3">
                     <div className="flex justify-between items-center text-sm text-gray-600">
@@ -297,7 +355,7 @@ export function Raffles() {
 
       {/* Create Raffle Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 backdrop-blur-sm bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6 text-gray-900">Create New Campaign</h2>
             <form onSubmit={(e) => { e.preventDefault(); handleCreateRaffle(); }}>
@@ -314,7 +372,6 @@ export function Raffles() {
                     }`}
                     onClick={() => setNewRaffle({ ...newRaffle, type: 'raffle' })}
                   >
-                    <div className="text-lg mb-1">🎟️</div>
                     <div className="font-medium">Raffle</div>
                     <div className="text-xs text-gray-600">Sell tickets for prizes</div>
                   </button>
@@ -327,7 +384,6 @@ export function Raffles() {
                     }`}
                     onClick={() => setNewRaffle({ ...newRaffle, type: 'fundraising' })}
                   >
-                    <div className="text-lg mb-1">💝</div>
                     <div className="font-medium">Fundraising</div>
                     <div className="text-xs text-gray-600">Accept donations</div>
                   </button>
@@ -426,7 +482,7 @@ export function Raffles() {
 
       {/* Image Modal */}
       {showImageModal && selectedRaffle && selectedRaffle.images && selectedRaffle.images.length > 0 && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={closeImageModal}>
+        <div className="fixed inset-0 backdrop-blur-sm bg-gray-900 bg-opacity-50 flex items-center justify-center z-50" onClick={closeImageModal}>
           <div className="relative max-w-4xl max-h-full p-4" onClick={(e) => e.stopPropagation()}>
             {/* Close Button */}
             <button

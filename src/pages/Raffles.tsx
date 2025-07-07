@@ -40,7 +40,6 @@ export const Raffles = () => {
   const [filterDate, setFilterDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRaffle, setSelectedRaffle] = useState<Raffle | null>(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [raffles, setRaffles] = useState<Raffle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +56,38 @@ export const Raffles = () => {
     host_name: "",
   });
   const itemsPerPage = 3;
+
+  const calculateTimeLeft = (endDate: string) => {
+    const now = new Date().getTime();
+    const end = new Date(endDate).getTime();
+    const difference = end - now;
+
+    if (difference > 0) {
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000),
+        total: difference
+      };
+    }
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
+  };
+
+  // Countdown timer state and effect
+  const [timeLeft, setTimeLeft] = useState<{[key: number]: ReturnType<typeof calculateTimeLeft>}>({});
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const newTimeLeft: {[key: number]: ReturnType<typeof calculateTimeLeft>} = {};
+      raffles.forEach(raffle => {
+        newTimeLeft[raffle.id] = calculateTimeLeft(raffle.ending_date);
+      });
+      setTimeLeft(newTimeLeft);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [raffles]);
 
   useEffect(() => {
     const fetchRaffles = async () => {
@@ -177,7 +208,7 @@ export const Raffles = () => {
                       ? 'bg-purple-100 text-purple-800' 
                       : 'bg-blue-100 text-blue-800'
                   }`}>
-                    {selectedRaffle.type === 'raffle' ? '🎟️ Raffle' : '💝 Fundraising'}
+                    {selectedRaffle.type === 'raffle' ? 'Raffle' : 'Fundraising'}
                   </span>
                 </div>
                 
@@ -188,6 +219,33 @@ export const Raffles = () => {
                   )}
                   <p><strong>Target Amount:</strong> ${selectedRaffle.target?.toLocaleString()}</p>
                   <p><strong>End Date:</strong> {new Date(selectedRaffle.ending_date).toLocaleDateString()}</p>
+                  
+                  {/* Countdown Timer */}
+                  <div className="bg-red-50 p-3 rounded-lg">
+                    <p className="font-semibold text-red-800 mb-2">Time Remaining:</p>
+                    {timeLeft[selectedRaffle.id] && timeLeft[selectedRaffle.id].total > 0 ? (
+                      <div className="flex gap-4 text-center">
+                        <div>
+                          <div className="text-2xl font-bold text-red-600">{timeLeft[selectedRaffle.id].days}</div>
+                          <div className="text-xs text-red-700">Days</div>
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-red-600">{timeLeft[selectedRaffle.id].hours}</div>
+                          <div className="text-xs text-red-700">Hours</div>
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-red-600">{timeLeft[selectedRaffle.id].minutes}</div>
+                          <div className="text-xs text-red-700">Minutes</div>
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-red-600">{timeLeft[selectedRaffle.id].seconds}</div>
+                          <div className="text-xs text-red-700">Seconds</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-gray-600 font-semibold">Campaign has ended</p>
+                    )}
+                  </div>
                   
                   {selectedRaffle.type === 'raffle' ? (
                     <>
@@ -245,7 +303,6 @@ export const Raffles = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 justify-items-center gap-4">
               {paginatedRaffles.map((raffle) => {
-                const daysLeft = Math.ceil((new Date(raffle.ending_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
                 const imageUrl = raffle.image1_url || raffle.image || '/images/default-raffle.png';
                 
                 return (
@@ -264,11 +321,22 @@ export const Raffles = () => {
                           target.src = '/images/default-raffle.png';
                         }}
                       />
-                      {/* Days left badge */}
+                      {/* Countdown timer badge */}
                       <div className="absolute top-2 right-2">
-                        <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-semibold">
-                          {daysLeft} day{daysLeft !== 1 ? 's' : ''} left
-                        </span>
+                        {timeLeft[raffle.id] && timeLeft[raffle.id].total > 0 ? (
+                          <div className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-semibold">
+                            <div className="flex gap-1">
+                              <span>{timeLeft[raffle.id].days}d</span>
+                              <span>{timeLeft[raffle.id].hours}h</span>
+                              <span>{timeLeft[raffle.id].minutes}m</span>
+                              <span>{timeLeft[raffle.id].seconds}s</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-semibold">
+                            Ended
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="p-4">
@@ -337,7 +405,7 @@ export const Raffles = () => {
               </button>
             </div>
             {showCreateModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="fixed inset-0 backdrop-blur-sm bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
                   <h2 className="text-2xl font-bold mb-6">Create New Campaign</h2>
                   
@@ -354,7 +422,6 @@ export const Raffles = () => {
                         }`}
                         onClick={() => setNewRaffle({ ...newRaffle, type: 'raffle' })}
                       >
-                        <div className="text-lg mb-1">🎟️</div>
                         <div className="font-medium">Raffle</div>
                         <div className="text-xs text-gray-600">Sell tickets for prizes</div>
                       </button>
@@ -367,7 +434,6 @@ export const Raffles = () => {
                         }`}
                         onClick={() => setNewRaffle({ ...newRaffle, type: 'fundraising' })}
                       >
-                        <div className="text-lg mb-1">💝</div>
                         <div className="font-medium">Fundraising</div>
                         <div className="text-xs text-gray-600">Accept donations</div>
                       </button>

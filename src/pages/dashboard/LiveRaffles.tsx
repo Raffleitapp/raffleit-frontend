@@ -124,13 +124,37 @@ const LiveRaffles = () => {
     fetchLiveRaffles();
   }, []); // Empty dependency array means this runs once on mount
 
-  const calculateDaysLeft = (endDate: string) => {
-    const today = new Date();
-    const end = new Date(endDate);
-    const diffTime = end.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
+  // Real-time countdown timer state
+  const [timeLeft, setTimeLeft] = useState<{ [key: number]: { days: number; hours: number; minutes: number; seconds: number } }>({});
+
+  // Calculate time remaining for countdown
+  const calculateTimeLeft = (endDate: string) => {
+    const difference = new Date(endDate).getTime() - new Date().getTime();
+    
+    if (difference > 0) {
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000),
+      };
+    }
+    
+    return { days: 0, hours: 0, minutes: 0, seconds: 0 };
   };
+
+  // Update timers every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const newTimeLeft: { [key: number]: { days: number; hours: number; minutes: number; seconds: number } } = {};
+      liveRaffles.forEach((raffle) => {
+        newTimeLeft[raffle.id] = calculateTimeLeft(raffle.endDate);
+      });
+      setTimeLeft(newTimeLeft);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [liveRaffles]);
 
   const openRaffleModal = (raffle: LiveRaffle) => {
     setSelectedRaffle(raffle);
@@ -299,7 +323,8 @@ const LiveRaffles = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {liveRaffles.map((raffle) => {
-            const daysLeft = calculateDaysLeft(raffle.endDate);
+            const timer = timeLeft[raffle.id] || { days: 0, hours: 0, minutes: 0, seconds: 0 };
+            const isExpired = timer.days === 0 && timer.hours === 0 && timer.minutes === 0 && timer.seconds === 0;
 
             return (
               <div key={raffle.id} className="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-200 hover:scale-[1.02]">
@@ -317,7 +342,7 @@ const LiveRaffles = () => {
                   {raffle.images && raffle.images.length > 1 && (
                     <div className="absolute bottom-2 left-2">
                       <span className="backdrop-blur bg-opacity-70 text-white px-2 py-1 rounded text-xs">
-                        📷 {raffle.images.length} photos
+                        {raffle.images.length} photos
                       </span>
                     </div>
                   )}
@@ -359,11 +384,35 @@ const LiveRaffles = () => {
                         </p>
                       </>
                     )}
-                    <p className="text-gray-700 text-sm">
-                      <span className="font-bold text-red-600">
-                        {daysLeft} day{daysLeft !== 1 ? 's' : ''} left
-                      </span>
-                    </p>
+                    
+                    {/* Real-time Countdown Timer */}
+                    <div className="mb-3">
+                      <p className="text-gray-700 text-sm font-semibold mb-2">Time Remaining:</p>
+                      {isExpired ? (
+                        <div className="text-red-600 font-bold text-center py-2">
+                          EXPIRED
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-4 gap-2 text-center">
+                          <div className="bg-red-50 p-2 rounded">
+                            <div className="text-lg font-bold text-red-600">{timer.days}</div>
+                            <div className="text-xs text-red-700">Days</div>
+                          </div>
+                          <div className="bg-red-50 p-2 rounded">
+                            <div className="text-lg font-bold text-red-600">{timer.hours}</div>
+                            <div className="text-xs text-red-700">Hours</div>
+                          </div>
+                          <div className="bg-red-50 p-2 rounded">
+                            <div className="text-lg font-bold text-red-600">{timer.minutes}</div>
+                            <div className="text-xs text-red-700">Minutes</div>
+                          </div>
+                          <div className="bg-red-50 p-2 rounded">
+                            <div className="text-lg font-bold text-red-600">{timer.seconds}</div>
+                            <div className="text-xs text-red-700">Seconds</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex gap-2">
@@ -412,7 +461,7 @@ const LiveRaffles = () => {
               {selectedRaffle.images && selectedRaffle.images.length > 1 && (
                 <div className="absolute bottom-4 left-4">
                   <span className="backdrop-blur bg-opacity-70 text-white px-3 py-1 rounded text-sm">
-                    📷 {selectedRaffle.images.length} photos
+                    {selectedRaffle.images.length} photos
                   </span>
                 </div>
               )}
@@ -503,10 +552,41 @@ const LiveRaffles = () => {
                   <h3 className="text-sm font-semibold text-gray-600 mb-1">
                     {selectedRaffle.type === 'raffle' ? 'Draw Date' : 'End Date'}
                   </h3>
-                  <p className="text-xl font-bold text-red-600">
-                    {calculateDaysLeft(selectedRaffle.endDate)} day{calculateDaysLeft(selectedRaffle.endDate) !== 1 ? 's' : ''} left
-                  </p>
-                  <p className="text-sm text-gray-600">{new Date(selectedRaffle.endDate).toLocaleDateString()}</p>
+                  <p className="text-sm text-gray-600 mb-3">{new Date(selectedRaffle.endDate).toLocaleDateString()}</p>
+                  
+                  {/* Real-time Countdown Timer */}
+                  <div className="mb-2">
+                    <p className="text-sm font-semibold text-gray-600 mb-2">Time Remaining:</p>
+                    {timeLeft[selectedRaffle.id] && (
+                      timeLeft[selectedRaffle.id].days === 0 && 
+                      timeLeft[selectedRaffle.id].hours === 0 && 
+                      timeLeft[selectedRaffle.id].minutes === 0 && 
+                      timeLeft[selectedRaffle.id].seconds === 0
+                    ) ? (
+                      <div className="text-red-600 font-bold text-center py-2">
+                        EXPIRED
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-4 gap-2 text-center">
+                        <div className="bg-red-50 p-2 rounded">
+                          <div className="text-lg font-bold text-red-600">{timeLeft[selectedRaffle.id]?.days || 0}</div>
+                          <div className="text-xs text-red-700">Days</div>
+                        </div>
+                        <div className="bg-red-50 p-2 rounded">
+                          <div className="text-lg font-bold text-red-600">{timeLeft[selectedRaffle.id]?.hours || 0}</div>
+                          <div className="text-xs text-red-700">Hours</div>
+                        </div>
+                        <div className="bg-red-50 p-2 rounded">
+                          <div className="text-lg font-bold text-red-600">{timeLeft[selectedRaffle.id]?.minutes || 0}</div>
+                          <div className="text-xs text-red-700">Minutes</div>
+                        </div>
+                        <div className="bg-red-50 p-2 rounded">
+                          <div className="text-lg font-bold text-red-600">{timeLeft[selectedRaffle.id]?.seconds || 0}</div>
+                          <div className="text-xs text-red-700">Seconds</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -526,7 +606,7 @@ const LiveRaffles = () => {
                             : 'text-gray-600 hover:text-gray-800'
                         }`}
                       >
-                        🎟️ Buy Tickets
+                        Buy Tickets
                       </button>
                       <button
                         onClick={() => setDonationMode(true)}
@@ -536,7 +616,7 @@ const LiveRaffles = () => {
                             : 'text-gray-600 hover:text-gray-800'
                         }`}
                       >
-                        💝 Donate
+                        Donate
                       </button>
                     </div>
                   )}
