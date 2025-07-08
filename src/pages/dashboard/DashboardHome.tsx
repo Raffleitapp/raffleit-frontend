@@ -111,7 +111,7 @@ export const DashboardHome = () => {
         Welcome to Your Dashboard, {user?.first_name || userRoleDisplay}!
       </h1>
       <p className="text-lg text-gray-700 mb-8">
-        Here's a quick overview of your Raffleit platform activity.
+        Here's a quick overview of your Funditzone platform activity.
       </p>
 
       {/* Quick Stats/KPIs */}
