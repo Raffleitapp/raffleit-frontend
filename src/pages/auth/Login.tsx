@@ -13,7 +13,7 @@ export const Login = () => {
       const emailInput = document.getElementById('email') as HTMLInputElement;
       const passwordInput = document.getElementById('password') as HTMLInputElement;
 
-      const response = await axios.post(`${API_BASE_URL}/api/login`, {
+      const response = await axios.post(`${API_BASE_URL}/login`, {
         email: emailInput?.value,
         password: passwordInput?.value,
       });
@@ -31,7 +31,8 @@ export const Login = () => {
 
       login(token, userToStore);
 
-      navigate('/dashboard');
+      // navigate('/dashboard'); // REMOVE or COMMENT OUT this line
+      navigate('/'); // Redirect to home page after login
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
