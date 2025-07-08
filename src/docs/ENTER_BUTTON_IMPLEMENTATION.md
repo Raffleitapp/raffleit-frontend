@@ -46,7 +46,7 @@ The "Enter" button functionality has been fully implemented to provide users wit
 ### Frontend Components
 
 #### LiveRaffles.tsx
-- **Location:** `/Users/leon/Desktop/raffleit-frontend/src/pages/dashboard/LiveRaffles.tsx`
+- **Location:** `/Users/leon/Desktop/Funditzone-frontend/src/pages/dashboard/LiveRaffles.tsx`
 - **Key Functions:**
   - `openRaffleModal()` - Opens the raffle details and purchase modal
   - `closeRaffleModal()` - Closes modal and resets state
@@ -66,7 +66,7 @@ const [purchaseSuccess, setPurchaseSuccess] = useState<string | null>(null);
 ### Backend Implementation
 
 #### TicketController.php
-- **Location:** `/Users/leon/Desktop/new-raffleit-backend/app/Http/Controllers/TicketController.php`
+- **Location:** `/Users/leon/Desktop/new-Funditzone-backend/app/Http/Controllers/TicketController.php`
 - **Enhanced `store()` method:**
   - Handles multiple ticket purchases (quantity 1-10)
   - Automatic unique ticket number generation
@@ -74,7 +74,7 @@ const [purchaseSuccess, setPurchaseSuccess] = useState<string | null>(null);
   - Returns purchase confirmation with ticket numbers
 
 #### API Routes
-- **Location:** `/Users/leon/Desktop/new-raffleit-backend/routes/api.php`
+- **Location:** `/Users/leon/Desktop/new-Funditzone-backend/routes/api.php`
 - **New ticket endpoints:**
   ```php
   Route::middleware('auth:sanctum')->group(function () {

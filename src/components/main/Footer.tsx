@@ -6,7 +6,7 @@ export const Footer = () => {
                 <div className="col-span-1 ml-4">
                     <h2 className="text-lg font-bold">Funditzone</h2>
                     <p className="text-sm">
-                        Raffleit provides opportunities to raise funds for business,Individuals and Organizations giving them a wide range of opportunities to raffle items or own items once they have taken part in the raffle.
+                        Funditzone provides opportunities to raise funds for business,Individuals and Organizations giving them a wide range of opportunities to raffle items or own items once they have taken part in the raffle.
                     </p>
                 </div>
                 <div className="col-span-1 ml-4">
@@ -27,7 +27,7 @@ export const Footer = () => {
                     <h2 className="text-lg font-bold">Contact Us</h2>
                     <p className="text-sm">Email: info@funditzone.com</p>
                     <p className="text-sm">Phone: +1 234 567 890</p>
-                    <p className="text-sm">Address: 123 Raffleit St, City, Country</p>
+                    <p className="text-sm">Address: 123 Funditzone St, City, Country</p>
                 </div>
                 <div className="col-span-1 ml-4">
                     <h2 className="text-lg font-bold">Follow Us</h2>
