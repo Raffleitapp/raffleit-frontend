@@ -11,7 +11,7 @@ export const Started = () => {
                 <div className="col-span-1 shadow-lg rounded-xl w-full px-4 py-4 mt-4 mb-4">
                     <h1 className="relative inline-block"><span className="rounded-full bg-text-primary text-white font-bold px-4.5 py-3.5 text-sm">1</span></h1>
                     <h2 className="font-bold mt-2 text-xl text-text-primary py-2 px-2">Create</h2>
-                    <p className="py-2 px-2 text-gray-500">Individuals or Organizations can create an account by clicking here or by downloading the Funditzone app on IOS | Google Play</p>
+                    <p className="py-2 px-2 text-gray-500">Individuals or Organizations can create an account by clicking here or by downloading the raffleit app on IOS | Google Play</p>
                 </div>
                 <div className="col-span-1 shadow-lg rounded-xl w-full px-4 py-4 mt-4 mb-4">
                     <h1 className="relative inline-block"><span className="rounded-full bg-btn-primary text-white font-bold px-4.5 py-3.5 text-sm">2</span></h1>

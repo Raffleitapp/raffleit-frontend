@@ -100,7 +100,7 @@ const Analytics = () => {
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-4xl font-extrabold mb-8 text-gray-900">Platform Analytics</h1>
-      <p className="text-lg text-gray-700 mb-8">Gain insights into your Funditzone platform's performance and user engagement.</p>
+      <p className="text-lg text-gray-700 mb-8">Gain insights into your Raffleit platform's performance and user engagement.</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <div className="bg-white p-6 rounded-lg shadow-md text-center">

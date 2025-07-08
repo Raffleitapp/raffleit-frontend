@@ -405,7 +405,7 @@ export const Raffles = () => {
               </button>
             </div>
             {showCreateModal && (
-              <div className="fixed inset-0 background-blur  bg-opacity-50 flex items-center justify-center z-50">
+              <div className="fixed inset-0 backdrop-blur-sm bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
                   <h2 className="text-2xl font-bold mb-6">Create New Campaign</h2>
                   

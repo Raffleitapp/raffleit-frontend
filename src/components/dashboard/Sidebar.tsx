@@ -63,7 +63,7 @@ export const Sidebar = () => {
                 className={`fixed z-100 top-0 left-0 h-screen bg-blue-900 px-6 py-6 shadow-md transform transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
                     } md:translate-x-0 w-64`}
             >
-                <h2 className="text-xl font-bold mb-4 text-white">Funditzone</h2>
+                <h2 className="text-xl font-bold mb-4 text-white">Raffleit</h2>
                 <ul className="list-none">
                     {filteredSidebarItems.map(({ icon: Icon, label, href }, index) => {
                         const isActive = location.pathname === href;
