@@ -44,7 +44,7 @@ const Users = () => {
             user_id: 1,
             first_name: 'Admin',
             last_name: 'User',
-            email: 'admin@raffleitapp.com',
+            email: 'admin@Funditzone.com',
             role: 'admin',
             status: 'active',
             registration_date: '2023-01-15',

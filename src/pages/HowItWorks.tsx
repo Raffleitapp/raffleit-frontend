@@ -16,7 +16,7 @@ export const HowItWorks = () => {
       <div className="container py-4 px-4 mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-6xl font-bold py-2 px-2">How <span className="text-btn-primary">Raffles</span> works</h1>
-          <p className="text-xl md:text-2xl font-semibold py-2 px-2">RaffleIt has several benefits</p>
+          <p className="text-xl md:text-2xl font-semibold py-2 px-2">Funditzone has several benefits</p>
         </div>
         <div className="grid grid-cols-1 gap-x-4 gap-y-6 md:grid-cols-4">
           <div className="col-span-1 shadow-lg w-full px-4 py-4 mt-4 mb-4">
@@ -37,7 +37,7 @@ export const HowItWorks = () => {
           </div>
           <div className="col-span-1 shadow-lg w-full px-4 py-4 mt-4 mb-4">
             <h3 className="font-bold text-xl">Supports</h3>
-            <p>RaffleIt App ensures people everywhere, support your cause without taking part in the raffle.</p>
+            <p>Funditzone App ensures people everywhere, support your cause without taking part in the raffle.</p>
           </div>
           <div className="col-span-1 shadow-lg w-full px-4 py-4 mt-4 mb-4">
             <h3 className="font-bold text-xl">Doorstep Delivery</h3>

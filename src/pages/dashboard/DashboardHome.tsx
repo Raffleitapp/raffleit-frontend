@@ -11,7 +11,7 @@ export const DashboardHome = () => {
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-4xl font-extrabold mb-4 text-gray-900">Welcome to Your Dashboard, {user?.first_name || userRoleDisplay}!</h1>
-      <p className="text-lg text-gray-700 mb-8">Here's a quick overview of your Raffleit platform activity.</p>
+      <p className="text-lg text-gray-700 mb-8">Here's a quick overview of your Funditzone platform activity.</p>
 
       {/* Quick Stats/KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">

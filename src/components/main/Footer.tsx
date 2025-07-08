@@ -4,9 +4,9 @@ export const Footer = () => {
         <footer className="bg-gray-800 text-white py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 container mx-auto px-2">
                 <div className="col-span-1 ml-4">
-                    <h2 className="text-lg font-bold">RaffleitApp</h2>
+                    <h2 className="text-lg font-bold">Funditzone</h2>
                     <p className="text-sm">
-                        Raffleit provides opportunities to raise funds for business,Individuals and Organizations giving them a wide range of opportunities to raffle items or own items once they have taken part in the raffle.
+                        Funditzone provides opportunities to raise funds for business,Individuals and Organizations giving them a wide range of opportunities to raffle items or own items once they have taken part in the raffle.
                     </p>
                 </div>
                 <div className="col-span-1 ml-4">
@@ -25,9 +25,9 @@ export const Footer = () => {
                 </div>
                 <div className="col-span-1 ml-4">
                     <h2 className="text-lg font-bold">Contact Us</h2>
-                    <p className="text-sm">Email: info@raffleitapp.com</p>
+                    <p className="text-sm">Email: info@Funditzone.com</p>
                     <p className="text-sm">Phone: +1 234 567 890</p>
-                    <p className="text-sm">Address: 123 Raffleit St, City, Country</p>
+                    <p className="text-sm">Address: 123 Funditzone St, City, Country</p>
                 </div>
                 <div className="col-span-1 ml-4">
                     <h2 className="text-lg font-bold">Follow Us</h2>
@@ -45,7 +45,7 @@ export const Footer = () => {
             <hr className="mt-4 py-2 px-2 w-95/100 mx-auto" />
             <div className="container mx-auto text-center py-2 px-2">
                 <p className="text-sm">
-                    &copy; {new Date().getFullYear()} RaffleitApp. All rights reserved.
+                    &copy; {new Date().getFullYear()} Funditzone. All rights reserved.
                 </p>
             </div>
         </footer >
