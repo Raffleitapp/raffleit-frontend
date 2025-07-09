@@ -1,46 +1,28 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../constants/constants';
-
-// Define a type for a single completed raffle
-interface CompletedRaffle {
-  id: number;
-  title: string;
-  prize: string;
-  winner: string;
-  totalTickets: number;
-  ticketsSold: number;
-  drawDate: string;
-  imageUrl: string;
-  type: 'raffle' | 'fundraising';
-  currentAmount: number;
-  ticketRevenue: number;
-  donationAmount: number;
-  target: number;
-  images?: Array<{
-    id: number;
-    path: string;
-    url: string;
-  }>;
-}
+import RaffleCard, { Raffle as RaffleCardData } from '../../components/shared/RaffleCard';
+import RaffleDetailsModal from '../../components/shared/RaffleDetailsModal';
 
 const CompletedRaffles = () => {
-  const [completedRaffles, setCompletedRaffles] = useState<CompletedRaffle[]>([]);
+  const [completedRaffles, setCompletedRaffles] = useState<RaffleCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRaffle, setSelectedRaffle] = useState<RaffleCardData | null>(null);
+  const [showRaffleModal, setShowRaffleModal] = useState(false);
 
   useEffect(() => {
     const fetchCompletedRaffles = async () => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch all raffles, then filter for completed ones
         const res = await fetch(`${API_BASE_URL}/raffles`);
         if (!res.ok) throw new Error('Failed to fetch raffles');
         const data = await res.json();
         const now = new Date();
-        // Filter for completed raffles (ending_date in the past and approved)
+        
         interface ApiRaffle {
           id: number;
+          share_id?: string;
           title?: string;
           host_name?: string;
           prize?: string;
@@ -56,11 +38,8 @@ const CompletedRaffles = () => {
           target?: number;
           image1?: string;
           image1_url?: string;
-          images?: Array<{
-            id: number;
-            path: string;
-            url: string;
-          }>;
+          images?: Array<{ id: number; path: string; url: string; }>;
+          category?: { category_name?: string };
         }
 
         const completed = (data as ApiRaffle[]).filter((raffle) => {
@@ -74,19 +53,27 @@ const CompletedRaffles = () => {
           
           return {
             id: raffle.id,
+            share_id: raffle.share_id || `raffle-${raffle.id}`,
             title: raffle.title || raffle.host_name || 'Untitled Raffle',
             prize: raffle.prize || raffle.description || 'No prize specified',
-            winner: raffle.winner_name || 'TBA',
+            description: raffle.description || '',
+            hostName: raffle.host_name || 'Unknown Host',
+            target: raffle.target || 0,
+            currentTickets: ticketsSold,
             totalTickets: raffle.total_tickets ?? 0,
-            ticketsSold: ticketsSold,
-            drawDate: raffle.ending_date,
-            imageUrl: raffle.image1 || '/images/default.png',
+            endDate: raffle.ending_date,
+            ticketPrice: ticketPrice,
             type: raffle.type,
             currentAmount: currentAmount,
             ticketRevenue: ticketRevenue,
             donationAmount: donationAmount,
-            target: raffle.target ?? 0,
-          };
+            imageUrl: raffle.image1_url || 
+                     (raffle.images && raffle.images.length > 0 ? raffle.images[0].url : null) ||
+                     '/images/tb2.png',
+            category: raffle.category?.category_name || 'N/A',
+            status: 'completed',
+            winner: raffle.winner_name,
+          } as RaffleCardData;
         });
         setCompletedRaffles(completed);
       } catch {
@@ -97,6 +84,44 @@ const CompletedRaffles = () => {
     };
     fetchCompletedRaffles();
   }, []);
+
+  const openRaffleModal = (raffle: RaffleCardData) => {
+    setSelectedRaffle(raffle);
+    setShowRaffleModal(true);
+  };
+
+  const closeRaffleModal = () => {
+    setShowRaffleModal(false);
+    setSelectedRaffle(null);
+  };
+
+  const handleShare = async (raffle: RaffleCardData) => {
+    const shareUrl = `${window.location.origin}/raffles/${raffle.share_id}`;
+    const shareData = {
+      title: raffle.title,
+      text: `Check out this ${raffle.type === 'raffle' ? 'raffle' : 'fundraiser'}: ${raffle.title}`,
+      url: shareUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback to copying link
+        await navigator.clipboard.writeText(shareUrl);
+        alert('Link copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      // Fallback to copying link
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        alert('Link copied to clipboard!');
+      } catch (clipboardError) {
+        console.error('Error copying to clipboard:', clipboardError);
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -141,76 +166,23 @@ const CompletedRaffles = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {completedRaffles.map((raffle) => (
-            <div key={raffle.id} className="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-200 hover:scale-[1.02]">
-              <div className="relative">
-                <img src={raffle.imageUrl} alt={raffle.title} className="w-full h-48 object-cover" />
-                <div className="absolute top-2 right-2">
-                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">
-                    COMPLETED
-                  </span>
-                </div>
-              </div>                <div className="p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{raffle.title}</h2>
-                  <p className="text-lg text-blue-700 mb-4 font-semibold">{raffle.prize}</p>
-                  <div className="mb-4 space-y-2">
-                    <p className="text-gray-700 text-sm">
-                      <strong>Winner:</strong> <span className="font-semibold text-green-600">{raffle.winner}</span>
-                    </p>
-                    <p className="text-gray-700 text-sm">
-                      <strong>Draw Date:</strong> {raffle.drawDate}
-                    </p>
-                    <p className="text-gray-700 text-sm">
-                      <strong>Total Collected:</strong> <span className="font-semibold text-green-600">${(raffle.currentAmount || 0).toFixed(2)}</span>
-                      {raffle.type === 'raffle' && (raffle.donationAmount || 0) > 0 && (
-                        <span className="text-xs text-gray-500 block ml-2">
-                          ${(raffle.ticketRevenue || 0).toFixed(2)} from tickets + ${(raffle.donationAmount || 0).toFixed(2)} from donations
-                        </span>
-                      )}
-                    </p>
-                    {raffle.target > 0 && (
-                      <p className="text-gray-700 text-sm">
-                        <strong>Goal Achievement:</strong> <span className="font-semibold">{Math.round(((raffle.currentAmount || 0) / raffle.target) * 100)}%</span> of ${raffle.target.toLocaleString()}
-                      </p>
-                    )}
-                  </div>                  <div className="flex justify-between items-center text-sm text-gray-600">
-                    {raffle.type === 'raffle' ? (
-                      <div className="w-full space-y-1">
-                        <div className="flex justify-between">
-                          <span>Tickets Sold: <span className="font-semibold">{raffle.ticketsSold}</span> / {raffle.totalTickets}</span>
-                          {raffle.ticketsSold === raffle.totalTickets && (
-                            <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">SOLD OUT</span>
-                          )}
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{ width: `${raffle.totalTickets ? (raffle.ticketsSold / raffle.totalTickets) * 100 : 0}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="w-full space-y-1">
-                        <div className="flex justify-between">
-                          <span>Amount Raised: <span className="font-semibold">${(raffle.currentAmount || 0)?.toLocaleString()}</span></span>
-                          {raffle.target > 0 && (raffle.currentAmount || 0) >= raffle.target && (
-                            <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">GOAL REACHED!</span>
-                          )}
-                        </div>
-                        {raffle.target > 0 && (
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-green-600 h-2 rounded-full" 
-                              style={{ width: `${Math.min(((raffle.currentAmount || 0) / raffle.target) * 100, 100)}%` }}
-                            ></div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-              </div>
-            </div>
+            <RaffleCard
+              key={raffle.id}
+              raffle={raffle}
+              onViewDetails={openRaffleModal}
+              onShare={handleShare}
+            />
           ))}
         </div>
+      )}
+
+      {selectedRaffle && (
+        <RaffleDetailsModal
+          raffle={selectedRaffle}
+          isOpen={showRaffleModal}
+          onClose={closeRaffleModal}
+          isDashboard={true}
+        />
       )}
     </div>
   );

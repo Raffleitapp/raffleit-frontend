@@ -1,38 +1,16 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../constants/constants';
 import { useAuth } from '../../context/authUtils';
-
-// Define a type for a single live raffle
-interface LiveRaffle {
-  id: number;
-  title: string;
-  prize: string;
-  description?: string;
-  hostName: string;
-  currentTickets: number;
-  totalTickets: number;
-  endDate: string; // YYYY-MM-DD format for easy date comparison
-  ticketPrice: number;
-  imageUrl: string;
-  category: string;
-  target: number;
-  type: 'raffle' | 'fundraising';
-  currentAmount: number; // Total money collected (tickets + donations)
-  ticketRevenue: number; // Money from ticket sales only
-  donationAmount: number; // Money from donations only
-  images?: Array<{
-    id: number;
-    path: string;
-    url: string;
-  }>;
-}
+import RaffleCard, { Raffle as RaffleCardData } from '../../components/shared/RaffleCard';
+import RaffleDetailsModal from '../../components/shared/RaffleDetailsModal';
+import PaymentOptions from '../../components/shared/PaymentOptions';
 
 const LiveRaffles = () => {
   const { user } = useAuth();
-  const [liveRaffles, setLiveRaffles] = useState<LiveRaffle[]>([]);
+  const [liveRaffles, setLiveRaffles] = useState<RaffleCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedRaffle, setSelectedRaffle] = useState<LiveRaffle | null>(null);
+  const [selectedRaffle, setSelectedRaffle] = useState<RaffleCardData | null>(null);
   const [showRaffleModal, setShowRaffleModal] = useState(false);
   const [ticketQuantity, setTicketQuantity] = useState(1);
   const [donationAmount, setDonationAmount] = useState<string>('');
@@ -50,6 +28,7 @@ const LiveRaffles = () => {
         // Define a type for the API response if it differs from LiveRaffle
         interface RaffleApiResponse {
           id: number;
+          share_id?: string;
           title?: string;
           host_name?: string;
           prize?: string;
@@ -63,11 +42,6 @@ const LiveRaffles = () => {
           current_amount?: number;
           image1?: string;
           image1_url?: string;
-          images?: Array<{
-            id: number;
-            path: string;
-            url: string;
-          }>;
           category?: { category_name?: string };
           approve_status?: string;
         }
@@ -79,7 +53,7 @@ const LiveRaffles = () => {
 
         // Filter for live raffles (assuming status or endDate logic)
         const now = new Date();
-        const live = data.filter((raffle: RaffleApiResponse) => {
+        const liveRafflesData = data.filter((raffle: RaffleApiResponse) => {
           // Example: raffle.approve_status === 'approved' && new Date(raffle.ending_date) > now
           return new Date(raffle.ending_date) > now && raffle.approve_status === 'approved';
         }).map((raffle: RaffleApiResponse) => {
@@ -91,6 +65,7 @@ const LiveRaffles = () => {
           
           return {
             id: raffle.id,
+            share_id: raffle.share_id || `raffle-${raffle.id}`,
             title: raffle.title || raffle.host_name || 'Untitled Raffle',
             prize: raffle.prize || raffle.description || 'No prize specified',
             description: raffle.description || '',
@@ -105,14 +80,13 @@ const LiveRaffles = () => {
             ticketRevenue: ticketRevenue,
             donationAmount: donationAmount,
             imageUrl: raffle.image1_url || 
-                     (raffle.images && raffle.images.length > 0 ? raffle.images[0].url : null) ||
                      '/images/tb2.png',
             category: raffle.category?.category_name || 'N/A',
-            images: raffle.images || [],
-          };
+            status: 'active',
+          } as RaffleCardData;
         });
 
-        setLiveRaffles(live);
+        setLiveRaffles(liveRafflesData);
       } catch (err) {
         console.error("Failed to fetch live raffles:", err);
         setError("Failed to load live raffles. Please try again later.");
@@ -156,7 +130,7 @@ const LiveRaffles = () => {
     return () => clearInterval(timer);
   }, [liveRaffles]);
 
-  const openRaffleModal = (raffle: LiveRaffle) => {
+  const openRaffleModal = (raffle: RaffleCardData) => {
     setSelectedRaffle(raffle);
     setShowRaffleModal(true);
     setTicketQuantity(1);
@@ -176,9 +150,9 @@ const LiveRaffles = () => {
     setPurchaseSuccess(null);
   };
 
-  const handlePurchaseTickets = async () => {
+  const handlePayment = async (method: 'paddle' | 'paypal') => {
     if (!selectedRaffle || !user) {
-      setPurchaseError('Please log in to purchase tickets');
+      setPurchaseError('Please log in to proceed with payment.');
       return;
     }
 
@@ -186,89 +160,111 @@ const LiveRaffles = () => {
     setPurchaseError(null);
     setPurchaseSuccess(null);
 
+    const isDonation = donationMode || selectedRaffle.type === 'fundraising';
+    const amount = isDonation ? parseFloat(donationAmount) : (selectedRaffle.ticketPrice || 0) * ticketQuantity;
+    
+    if (isNaN(amount) || amount <= 0) {
+      setPurchaseError('Please enter a valid amount.');
+      setPurchasing(false);
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/payments/tickets/checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          raffle_id: selectedRaffle.id,
-          quantity: ticketQuantity,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Failed to create payment checkout');
-      }
-
-      const result = await response.json();
       
-      if (result.success && result.checkout_url) {
-        // Redirect to Paddle checkout
-        window.location.href = result.checkout_url;
-      } else {
-        throw new Error(result.error || 'Failed to create payment checkout');
+      if (method === 'paypal') {
+        // PayPal payment flow
+        const endpoint = isDonation ? '/payments/paypal/donations' : '/payments/paypal/tickets';
+        const body = {
+          raffle_id: selectedRaffle.id,
+          ...(isDonation ? { amount } : { quantity: ticketQuantity }),
+        };
+
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to create PayPal payment.');
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.approval_url) {
+          window.location.href = result.approval_url;
+        } else {
+          throw new Error(result.error || 'Failed to get PayPal approval URL.');
+        }
+        
+      } else if (method === 'paddle') {
+        // Paddle payment flow
+        const endpoint = isDonation ? '/payments/paddle/donations' : '/payments/paddle/tickets';
+        const body = {
+          raffle_id: selectedRaffle.id,
+          ...(isDonation ? { amount } : { quantity: ticketQuantity }),
+        };
+
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to create Paddle checkout.');
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.checkout_url) {
+          window.location.href = result.checkout_url;
+        } else {
+          throw new Error(result.error || 'Failed to get Paddle checkout URL.');
+        }
       }
 
     } catch (err) {
-      setPurchaseError(err instanceof Error ? err.message : 'Failed to create payment checkout');
+      setPurchaseError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
       setPurchasing(false);
     }
   };
 
-  const handleDonation = async () => {
-    if (!selectedRaffle || !user) {
-      setPurchaseError('Please log in to make a donation');
-      return;
-    }
-
-    const amount = parseFloat(donationAmount);
-    if (isNaN(amount) || amount <= 0) {
-      setPurchaseError('Please enter a valid donation amount');
-      return;
-    }
-
-    setPurchasing(true);
-    setPurchaseError(null);
-    setPurchaseSuccess(null);
+  const handleShare = async (raffle: RaffleCardData) => {
+    const shareUrl = `${window.location.origin}/raffles/${raffle.share_id}`;
+    const shareData = {
+      title: raffle.title,
+      text: `Check out this ${raffle.type === 'raffle' ? 'raffle' : 'fundraiser'}: ${raffle.title}`,
+      url: shareUrl,
+    };
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/payments/donations/checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          raffle_id: selectedRaffle.id,
-          amount: amount,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Failed to create donation checkout');
-      }
-
-      const result = await response.json();
-      
-      if (result.success && result.checkout_url) {
-        // Redirect to Paddle checkout
-        window.location.href = result.checkout_url;
+      if (navigator.share) {
+        await navigator.share(shareData);
       } else {
-        throw new Error(result.error || 'Failed to create donation checkout');
+        // Fallback to copying link
+        await navigator.clipboard.writeText(shareUrl);
+        alert('Link copied to clipboard!');
       }
-
-    } catch (err) {
-      setPurchaseError(err instanceof Error ? err.message : 'Failed to create donation checkout');
-    } finally {
-      setPurchasing(false);
+    } catch (error) {
+      console.error('Error sharing:', error);
+      // Fallback to copying link
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        alert('Link copied to clipboard!');
+      } catch (clipboardError) {
+        console.error('Error copying to clipboard:', clipboardError);
+      }
     }
   };
 
@@ -322,453 +318,175 @@ const LiveRaffles = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {liveRaffles.map((raffle) => {
-            const timer = timeLeft[raffle.id] || { days: 0, hours: 0, minutes: 0, seconds: 0 };
-            const isExpired = timer.days === 0 && timer.hours === 0 && timer.minutes === 0 && timer.seconds === 0;
-
-            return (
-              <div key={raffle.id} className="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-200 hover:scale-[1.02]">
-                <div className="relative">
-                  <img 
-                    src={raffle.imageUrl} 
-                    alt={raffle.title} 
-                    className="w-full h-48 object-cover" 
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = '/images/tb2.png';
-                    }}
-                  />
-                  {/* Additional Images Indicator */}
-                  {raffle.images && raffle.images.length > 1 && (
-                    <div className="absolute bottom-2 left-2">
-                      <span className="backdrop-blur bg-opacity-70 text-white px-2 py-1 rounded text-xs">
-                        {raffle.images.length} photos
-                      </span>
-                    </div>
-                  )}
-                  {/* Type Badge */}
-                  <div className="absolute top-2 left-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      raffle.type === 'raffle' 
-                        ? 'bg-purple-100 text-purple-800' 
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {raffle.type === 'raffle' ? 'Raffle' : 'Fundraising'}
-                    </span>
-                  </div>
-                  {/* Category Badge */}
-                  <div className="absolute top-2 right-2">
-                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
-                      {raffle.category}
-                    </span>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{raffle.title}</h2>
-                  <p className="text-base text-blue-700 mb-4 font-semibold">{raffle.prize}</p>
-
-                  <div className="mb-4">
-                    {raffle.type === 'raffle' ? (
-                      <>
-                        <p className="text-gray-700 text-sm mb-2">
-                          <span className="font-semibold">Ticket Price:</span> ${typeof raffle.ticketPrice === 'number' ? raffle.ticketPrice.toFixed(2) : 'N/A'}
-                        </p>
-                        <p className="text-gray-700 text-sm mb-3">
-                          <span className="font-semibold">Tickets:</span> {raffle.currentTickets} / {raffle.totalTickets}
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-gray-700 text-sm mb-3">
-                          <span className="font-semibold">Goal:</span> ${raffle.target.toLocaleString()}
-                        </p>
-                      </>
-                    )}
-                    
-                    {/* Real-time Countdown Timer */}
-                    <div className="mb-3">
-                      <p className="text-gray-700 text-sm font-semibold mb-2">Time Remaining:</p>
-                      {isExpired ? (
-                        <div className="text-red-600 font-bold text-center py-2">
-                          EXPIRED
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-4 gap-2 text-center">
-                          <div className="bg-red-50 p-2 rounded">
-                            <div className="text-lg font-bold text-red-600">{timer.days}</div>
-                            <div className="text-xs text-red-700">Days</div>
-                          </div>
-                          <div className="bg-red-50 p-2 rounded">
-                            <div className="text-lg font-bold text-red-600">{timer.hours}</div>
-                            <div className="text-xs text-red-700">Hours</div>
-                          </div>
-                          <div className="bg-red-50 p-2 rounded">
-                            <div className="text-lg font-bold text-red-600">{timer.minutes}</div>
-                            <div className="text-xs text-red-700">Minutes</div>
-                          </div>
-                          <div className="bg-red-50 p-2 rounded">
-                            <div className="text-lg font-bold text-red-600">{timer.seconds}</div>
-                            <div className="text-xs text-red-700">Seconds</div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => openRaffleModal(raffle)}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
-                    >
-                      View Details
-                    </button>
-                    <button
-                      onClick={() => openRaffleModal(raffle)}
-                      className="flex-1 px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 transition-colors"
-                    >
-                      {raffle.type === 'raffle' ? 'Enter Now' : 'Donate Now'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {liveRaffles.map((raffle) => (
+            <RaffleCard
+              key={raffle.id}
+              raffle={raffle}
+              onViewDetails={openRaffleModal}
+              onEnter={openRaffleModal}
+              onShare={handleShare}
+              timeLeft={timeLeft[raffle.id]}
+            />
+          ))}
         </div>
       )}
 
-      {/* Raffle Details and Purchase Modal */}
-      {showRaffleModal && selectedRaffle && (
-        <div className="fixed inset-0 backdrop-blur-sm transition-opacity flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="relative">
-              <img 
-                src={selectedRaffle.imageUrl} 
-                alt={selectedRaffle.title}
-                className="w-full h-64 object-cover rounded-t-lg"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/images/tb2.png';
-                }}
-              />
-              <button
-                onClick={closeRaffleModal}
-                className="absolute top-4 right-4 backdrop-blur bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-75 text-xl"
-              >
-                ✕
-              </button>
-              {/* Additional Images Indicator */}
-              {selectedRaffle.images && selectedRaffle.images.length > 1 && (
-                <div className="absolute bottom-4 left-4">
-                  <span className="backdrop-blur bg-opacity-70 text-white px-3 py-1 rounded text-sm">
-                    {selectedRaffle.images.length} photos
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-6">
-              <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{selectedRaffle.title}</h1>
-                <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-semibold">
-                    {selectedRaffle.category}
-                  </span>
-                  <span>Host: {selectedRaffle.hostName}</span>
-                </div>
+      {/* Raffle Details Modal */}
+      {selectedRaffle && (
+        <RaffleDetailsModal
+          raffle={selectedRaffle}
+          isOpen={showRaffleModal}
+          onClose={closeRaffleModal}
+          isDashboard={true}
+          timeLeft={timeLeft[selectedRaffle.id] ? {
+            ...timeLeft[selectedRaffle.id],
+            total: (timeLeft[selectedRaffle.id].days * 24 * 60 * 60 * 1000) + 
+                   (timeLeft[selectedRaffle.id].hours * 60 * 60 * 1000) + 
+                   (timeLeft[selectedRaffle.id].minutes * 60 * 1000) + 
+                   (timeLeft[selectedRaffle.id].seconds * 1000)
+          } : undefined}
+        >
+          {/* Custom Purchase/Donation Section */}
+          <div className="border-t pt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-slate-800">
+              {selectedRaffle?.type === 'raffle' ? 'Purchase Tickets or Donate' : 'Make a Donation'}
+            </h2>
+            {selectedRaffle?.type === 'raffle' && (
+              <div className="flex bg-slate-100 rounded-lg p-1">
+                <button
+                  onClick={() => setDonationMode(false)}
+                  className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${!donationMode ? 'bg-white shadow' : 'text-slate-600'}`}
+                >
+                  Tickets
+                </button>
+                <button
+                  onClick={() => setDonationMode(true)}
+                  className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${donationMode ? 'bg-white shadow' : 'text-slate-600'}`}
+                >
+                  Donate
+                </button>
               </div>
-
-              {/* Prize Information */}
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">Prize</h2>
-                <p className="text-lg text-blue-700 font-semibold">{selectedRaffle.prize}</p>
-              </div>
-
-              {/* Description */}
-              {selectedRaffle.description && (
-                <div className="mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Description</h2>
-                  <p className="text-gray-700 leading-relaxed">{selectedRaffle.description}</p>
-                </div>
-              )}
-
-              {/* Raffle Statistics */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">Total Collected</h3>
-                  <p className="text-xl font-bold text-green-600">${(selectedRaffle.currentAmount || 0).toFixed(2)}</p>
-                  {selectedRaffle.type === 'raffle' && (selectedRaffle.donationAmount || 0) > 0 && (
-                    <p className="text-xs text-gray-500">
-                      ${(selectedRaffle.ticketRevenue || 0).toFixed(2)} tickets + ${(selectedRaffle.donationAmount || 0).toFixed(2)} donations
-                    </p>
-                  )}
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">Target Goal</h3>
-                  <p className="text-xl font-bold text-blue-600">${selectedRaffle.target.toLocaleString()}</p>
-                  <p className="text-xs text-gray-500">
-                    {selectedRaffle.target ? Math.round(((selectedRaffle.currentAmount || 0) / selectedRaffle.target) * 100) : 0}% reached
-                  </p>
-                </div>
-                {selectedRaffle.type === 'raffle' ? (
-                  <>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h3 className="text-sm font-semibold text-gray-600 mb-1">Ticket Price</h3>
-                      <p className="text-xl font-bold text-purple-600">${typeof selectedRaffle.ticketPrice === 'number' ? selectedRaffle.ticketPrice.toFixed(2) : 'N/A'}</p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h3 className="text-sm font-semibold text-gray-600 mb-1">Tickets Sold</h3>
-                      <p className="text-xl font-bold text-gray-900">
-                        {selectedRaffle.currentTickets} / {selectedRaffle.totalTickets}
-                      </p>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{ 
-                            width: `${selectedRaffle.totalTickets ? (selectedRaffle.currentTickets / selectedRaffle.totalTickets) * 100 : 0}%` 
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="bg-gray-50 p-4 rounded-lg col-span-2">
-                    <h3 className="text-sm font-semibold text-gray-600 mb-1">Fundraising Progress</h3>
-                    <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
-                      <div 
-                        className="bg-green-600 h-4 rounded-full flex items-center justify-center text-white text-xs font-semibold" 
-                        style={{ 
-                          width: `${selectedRaffle.target ? Math.min(((selectedRaffle.currentAmount || 0) / selectedRaffle.target) * 100, 100) : 0}%`,
-                          minWidth: '2rem'
-                        }}
-                      >
-                        {selectedRaffle.target ? Math.round(((selectedRaffle.currentAmount || 0) / selectedRaffle.target) * 100) : 0}%
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div className="bg-gray-50 p-4 rounded-lg col-span-2">
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                    {selectedRaffle.type === 'raffle' ? 'Draw Date' : 'End Date'}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-3">{new Date(selectedRaffle.endDate).toLocaleDateString()}</p>
-                  
-                  {/* Real-time Countdown Timer */}
-                  <div className="mb-2">
-                    <p className="text-sm font-semibold text-gray-600 mb-2">Time Remaining:</p>
-                    {timeLeft[selectedRaffle.id] && (
-                      timeLeft[selectedRaffle.id].days === 0 && 
-                      timeLeft[selectedRaffle.id].hours === 0 && 
-                      timeLeft[selectedRaffle.id].minutes === 0 && 
-                      timeLeft[selectedRaffle.id].seconds === 0
-                    ) ? (
-                      <div className="text-red-600 font-bold text-center py-2">
-                        EXPIRED
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-4 gap-2 text-center">
-                        <div className="bg-red-50 p-2 rounded">
-                          <div className="text-lg font-bold text-red-600">{timeLeft[selectedRaffle.id]?.days || 0}</div>
-                          <div className="text-xs text-red-700">Days</div>
-                        </div>
-                        <div className="bg-red-50 p-2 rounded">
-                          <div className="text-lg font-bold text-red-600">{timeLeft[selectedRaffle.id]?.hours || 0}</div>
-                          <div className="text-xs text-red-700">Hours</div>
-                        </div>
-                        <div className="bg-red-50 p-2 rounded">
-                          <div className="text-lg font-bold text-red-600">{timeLeft[selectedRaffle.id]?.minutes || 0}</div>
-                          <div className="text-xs text-red-700">Minutes</div>
-                        </div>
-                        <div className="bg-red-50 p-2 rounded">
-                          <div className="text-lg font-bold text-red-600">{timeLeft[selectedRaffle.id]?.seconds || 0}</div>
-                          <div className="text-xs text-red-700">Seconds</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Purchase Section */}
-              <div className="border-t pt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    {selectedRaffle.type === 'raffle' ? 'Purchase Tickets or Donate' : 'Make a Donation'}
-                  </h2>
-                  {selectedRaffle.type === 'raffle' && (
-                    <div className="flex bg-gray-100 rounded-lg p-1">
-                      <button
-                        onClick={() => setDonationMode(false)}
-                        className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                          !donationMode 
-                            ? 'bg-white text-blue-600 shadow-sm' 
-                            : 'text-gray-600 hover:text-gray-800'
-                        }`}
-                      >
-                        Buy Tickets
-                      </button>
-                      <button
-                        onClick={() => setDonationMode(true)}
-                        className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                          donationMode 
-                            ? 'bg-white text-green-600 shadow-sm' 
-                            : 'text-gray-600 hover:text-gray-800'
-                        }`}
-                      >
-                        Donate
-                      </button>
-                    </div>
-                  )}
-                </div>
-                
-                {purchaseSuccess && (
-                  <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-                    {purchaseSuccess}
-                  </div>
-                )}
-
-                {purchaseError && (
-                  <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-                    {purchaseError}
-                  </div>
-                )}
-
-                {!user ? (
-                  <div className="text-center p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg">
-                    <p className="mb-2">Please log in to {selectedRaffle.type === 'raffle' ? 'purchase tickets or donate' : 'make a donation'}</p>
-                    <button
-                      onClick={() => window.location.href = '/login'}
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                    >
-                      Log In
-                    </button>
-                  </div>
-                ) : (donationMode || selectedRaffle.type === 'fundraising') ? (
-                  /* Donation Section */
-                  <div className="space-y-4">
-                    <div>
-                      <label htmlFor="donation-amount" className="block text-sm font-medium text-gray-700 mb-2">
-                        Donation Amount ($)
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-3 text-gray-500">$</span>
-                        <input
-                          id="donation-amount"
-                          type="number"
-                          min="1"
-                          step="0.01"
-                          value={donationAmount}
-                          onChange={(e) => setDonationAmount(e.target.value)}
-                          className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                          placeholder="Enter amount"
-                          disabled={purchasing}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Quick donation amounts */}
-                    <div className="grid grid-cols-4 gap-2">
-                      {[5, 10, 25, 50].map((amount) => (
-                        <button
-                          key={amount}
-                          onClick={() => setDonationAmount(amount.toString())}
-                          className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
-                          disabled={purchasing}
-                        >
-                          ${amount}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg">
-                      <span className="text-lg font-semibold text-green-800">Your Donation:</span>
-                      <span className="text-2xl font-bold text-green-600">
-                        ${donationAmount ? parseFloat(donationAmount).toFixed(2) : '0.00'}
-                      </span>
-                    </div>
-
-                    <div className="flex gap-3">
-                      <button
-                        onClick={closeRaffleModal}
-                        className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
-                        disabled={purchasing}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleDonation}
-                        disabled={purchasing || !donationAmount || parseFloat(donationAmount) <= 0}
-                        className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {purchasing ? 'Processing...' : `Donate $${donationAmount ? parseFloat(donationAmount).toFixed(2) : '0.00'}`}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* Ticket Purchase Section */
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <label htmlFor="quantity" className="text-sm font-medium text-gray-700">
-                        Number of tickets:
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setTicketQuantity(Math.max(1, ticketQuantity - 1))}
-                          className="w-8 h-8 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors flex items-center justify-center"
-                          disabled={purchasing}
-                        >
-                          -
-                        </button>
-                        <input
-                          id="quantity"
-                          type="number"
-                          min="1"
-                          max="10"
-                          value={ticketQuantity}
-                          onChange={(e) => setTicketQuantity(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
-                          className="w-16 text-center border border-gray-300 rounded px-2 py-1"
-                          disabled={purchasing}
-                        />
-                        <button
-                          onClick={() => setTicketQuantity(Math.min(10, ticketQuantity + 1))}
-                          className="w-8 h-8 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors flex items-center justify-center"
-                          disabled={purchasing}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg">
-                      <span className="text-lg font-semibold text-blue-800">Total Cost:</span>
-                      <span className="text-2xl font-bold text-blue-600">
-                        ${typeof selectedRaffle.ticketPrice === 'number' ? (selectedRaffle.ticketPrice * ticketQuantity).toFixed(2) : 'N/A'}
-                      </span>
-                    </div>
-
-                    <div className="flex gap-3">
-                      <button
-                        onClick={closeRaffleModal}
-                        className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
-                        disabled={purchasing}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handlePurchaseTickets}
-                        disabled={purchasing}
-                        className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {purchasing ? 'Processing...' : `Purchase ${ticketQuantity} Ticket${ticketQuantity > 1 ? 's' : ''}`}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
           </div>
+
+          {purchaseSuccess && (
+            <div className="mb-4 p-4 bg-emerald-100 border border-emerald-400 text-emerald-700 rounded-lg">
+              {purchaseSuccess}
+            </div>
+          )}
+          {purchaseError && (
+            <div className="mb-4 p-4 bg-rose-100 border border-rose-400 text-rose-700 rounded-lg">
+              {purchaseError}
+            </div>
+          )}
+
+          {!user ? (
+            <div className="text-center p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg">
+              <p className="mb-2">Please log in to {selectedRaffle?.type === 'raffle' ? 'purchase tickets or donate' : 'make a donation'}</p>
+              <button
+                onClick={() => window.location.href = '/login'}
+                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
+              >
+                Log In
+              </button>
+            </div>
+          ) : (donationMode || selectedRaffle?.type === 'fundraising') ? (
+            /* Donation Section */
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="donation-amount" className="block text-sm font-medium text-slate-700 mb-2">
+                  Donation Amount ($)
+                </label>
+                <input
+                  type="number"
+                  id="donation-amount"
+                  value={donationAmount}
+                  onChange={(e) => setDonationAmount(e.target.value)}
+                  placeholder="e.g., 25.00"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  disabled={purchasing}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {['10', '25', '50', '100', '250', '500'].map(amount => (
+                  <button
+                    key={amount}
+                    onClick={() => setDonationAmount(amount)}
+                    className="px-4 py-2 bg-slate-100 text-slate-800 rounded-lg hover:bg-slate-200 transition-colors font-semibold"
+                    disabled={purchasing}
+                  >
+                    ${amount}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex justify-between items-center p-4 bg-emerald-50 rounded-lg">
+                <span className="text-lg font-semibold text-emerald-800">Your Donation:</span>
+                <span className="text-2xl font-bold text-emerald-600">
+                  ${donationAmount ? parseFloat(donationAmount).toFixed(2) : '0.00'}
+                </span>
+              </div>
+
+              <PaymentOptions
+                onPayPalClick={() => handlePayment('paypal')}
+                onPaddleClick={() => handlePayment('paddle')}
+                disabled={!donationAmount || parseFloat(donationAmount) <= 0}
+                purchasing={purchasing}
+                isDashboard={true}
+              />
+            </div>
+          ) : (
+            /* Ticket Purchase Section */
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <label htmlFor="quantity" className="text-sm font-medium text-slate-700">
+                  Number of tickets:
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setTicketQuantity(Math.max(1, ticketQuantity - 1))}
+                    className="w-8 h-8 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 transition-colors flex items-center justify-center"
+                    disabled={purchasing}
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    id="quantity"
+                    value={ticketQuantity}
+                    onChange={(e) => setTicketQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    className="w-16 text-center border-slate-300 rounded-md"
+                    disabled={purchasing}
+                  />
+                  <button
+                    onClick={() => setTicketQuantity(ticketQuantity + 1)}
+                    className="w-8 h-8 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 transition-colors flex items-center justify-center"
+                    disabled={purchasing}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center p-4 bg-indigo-50 rounded-lg">
+                <span className="text-lg font-semibold text-indigo-800">Total Price:</span>
+                <span className="text-2xl font-bold text-indigo-600">
+                  ${typeof selectedRaffle?.ticketPrice === 'number' ? (selectedRaffle.ticketPrice * ticketQuantity).toFixed(2) : 'N/A'}
+                </span>
+              </div>
+
+              <PaymentOptions
+                onPayPalClick={() => handlePayment('paypal')}
+                onPaddleClick={() => handlePayment('paddle')}
+                disabled={false}
+                purchasing={purchasing}
+                isDashboard={true}
+              />
+            </div>
+          )}
         </div>
+        </RaffleDetailsModal>
       )}
     </div>
   );
