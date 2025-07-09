@@ -12,6 +12,7 @@ import { HowItWorks } from './pages/HowItWorks';
 import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
 import { Raffles } from './pages/Raffles';
+import PublicRaffles from './pages/PublicRaffles';
 import { AdminDashboard } from './pages/dashboard/AdminDashboard';
 import CompletedRaffles from './pages/dashboard/CompletedRaffles';
 import LiveRaffles from './pages/dashboard/LiveRaffles';
@@ -53,8 +54,8 @@ function PublicLayout() {
         <Route path="/howitworks" element={<HowItWorks />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/raffles" element={<Raffles />} />
-        <Route path="/raffles/:id" element={<Raffles />} />
+        <Route path="/raffles" element={<PublicRaffles />} />
+        <Route path="/raffles/:id" element={<PublicRaffles />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {showLayout && <Footer />}
@@ -86,6 +87,7 @@ function DashboardLayoutRoutes() {
         <Route path="raffles/:id/winners" element={<Raffles />} />
         <Route path="raffles/:id/entries" element={<Raffles />} />
         <Route path="raffles/:id/entries/:entryId" element={<Raffles />} />
+        <Route path="home" element={<Home />} />
         <Route path="*" element={<NotFound />} />
       </Route>
       <Route path="*" element={<NotFound />} />
@@ -100,14 +102,18 @@ interface ProtectedRouteProps {
 
 // Apply the props interface to ProtectedRoute
 function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!loading && !isAuthenticated) {
       navigate('/login', { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, loading, navigate]);
+
+  if (loading) {
+    return <div>Loading...</div>; // Show a loading indicator while authentication is being determined
+  }
 
   return isAuthenticated ? <>{children}</> : null;
 }

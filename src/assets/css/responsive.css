@@ -1,0 +1,254 @@
+/* Custom responsive utilities for the raffle application */
+
+/* Responsive spacing utilities */
+.responsive-padding {
+  @apply px-4 sm:px-6 lg:px-8;
+}
+
+.responsive-margin {
+  @apply mx-4 sm:mx-6 lg:mx-8;
+}
+
+/* Responsive text utilities */
+.responsive-text-sm {
+  @apply text-xs sm:text-sm;
+}
+
+.responsive-text-base {
+  @apply text-sm sm:text-base;
+}
+
+.responsive-text-lg {
+  @apply text-base sm:text-lg;
+}
+
+.responsive-text-xl {
+  @apply text-lg sm:text-xl;
+}
+
+.responsive-text-2xl {
+  @apply text-xl sm:text-2xl;
+}
+
+.responsive-text-3xl {
+  @apply text-2xl sm:text-3xl;
+}
+
+/* Responsive grid utilities */
+.responsive-grid-2 {
+  @apply grid-cols-1 sm:grid-cols-2;
+}
+
+.responsive-grid-3 {
+  @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+}
+
+.responsive-grid-4 {
+  @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+}
+
+/* Responsive gap utilities */
+.responsive-gap {
+  @apply gap-4 sm:gap-6 lg:gap-8;
+}
+
+/* Responsive button utilities */
+.responsive-button {
+  @apply px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base;
+}
+
+.responsive-button-sm {
+  @apply px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm;
+}
+
+/* Responsive card utilities */
+.responsive-card-padding {
+  @apply p-3 sm:p-4 lg:p-6;
+}
+
+.responsive-card-margin {
+  @apply m-3 sm:m-4 lg:m-6;
+}
+
+/* Responsive image utilities */
+.responsive-image-height {
+  @apply h-40 sm:h-48 lg:h-56;
+}
+
+/* Responsive flex utilities */
+.responsive-flex {
+  @apply flex-col sm:flex-row;
+}
+
+.responsive-flex-gap {
+  @apply gap-2 sm:gap-3 lg:gap-4;
+}
+
+/* Responsive form utilities */
+.responsive-form-input {
+  @apply px-3 py-2 text-sm sm:text-base;
+}
+
+.responsive-form-label {
+  @apply text-sm sm:text-base;
+}
+
+/* Responsive modal utilities */
+.responsive-modal-width {
+  @apply w-full sm:w-auto sm:max-w-md lg:max-w-lg xl:max-w-xl;
+}
+
+.responsive-modal-padding {
+  @apply p-4 sm:p-6 lg:p-8;
+}
+
+/* Responsive container utilities */
+.responsive-container {
+  @apply max-w-sm sm:max-w-md lg:max-w-lg xl:max-w-xl mx-auto;
+}
+
+.responsive-container-wide {
+  @apply max-w-4xl sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl mx-auto;
+}
+
+/* Responsive hide/show utilities */
+.hide-on-mobile {
+  @apply hidden sm:block;
+}
+
+.show-on-mobile {
+  @apply block sm:hidden;
+}
+
+.hide-on-desktop {
+  @apply block sm:hidden;
+}
+
+.show-on-desktop {
+  @apply hidden sm:block;
+}
+
+/* Responsive shadow utilities */
+.responsive-shadow {
+  @apply shadow-sm sm:shadow-md lg:shadow-lg;
+}
+
+/* Responsive border radius utilities */
+.responsive-rounded {
+  @apply rounded-md sm:rounded-lg lg:rounded-xl;
+}
+
+/* Responsive hover effects */
+.responsive-hover {
+  @apply hover:scale-105 transition-transform duration-200;
+}
+
+/* Responsive focus states */
+.responsive-focus {
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+}
+
+/* Responsive animations */
+.responsive-animate {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+/* Responsive spacing for sections */
+.responsive-section-padding {
+  @apply py-8 sm:py-12 lg:py-16;
+}
+
+.responsive-section-margin {
+  @apply my-8 sm:my-12 lg:my-16;
+}
+
+/* Responsive progress bar */
+.responsive-progress {
+  @apply h-1.5 sm:h-2 lg:h-3;
+}
+
+/* Responsive aspect ratios */
+.responsive-aspect-video {
+  @apply aspect-video w-full;
+}
+
+.responsive-aspect-square {
+  @apply aspect-square w-full;
+}
+
+/* Responsive overlay utilities */
+.responsive-overlay {
+  @apply bg-black bg-opacity-50 sm:bg-opacity-60 lg:bg-opacity-70;
+}
+
+/* Responsive backdrop blur */
+.responsive-backdrop-blur {
+  @apply backdrop-blur-sm sm:backdrop-blur-md lg:backdrop-blur-lg;
+}
+
+/* Responsive line clamp utilities */
+.responsive-line-clamp-2 {
+  @apply line-clamp-2 sm:line-clamp-3;
+}
+
+.responsive-line-clamp-3 {
+  @apply line-clamp-2 sm:line-clamp-3 lg:line-clamp-4;
+}
+
+/* Responsive icon sizes */
+.responsive-icon-sm {
+  @apply w-3 h-3 sm:w-4 sm:h-4;
+}
+
+.responsive-icon-md {
+  @apply w-4 h-4 sm:w-5 sm:h-5;
+}
+
+.responsive-icon-lg {
+  @apply w-5 h-5 sm:w-6 sm:h-6;
+}
+
+/* Responsive loading spinner */
+.responsive-spinner {
+  @apply w-4 h-4 sm:w-5 sm:h-5 animate-spin;
+}
+
+/* Responsive truncate */
+.responsive-truncate {
+  @apply truncate sm:text-clip;
+}
+
+/* Responsive max width utilities */
+.responsive-max-w-sm {
+  @apply max-w-xs sm:max-w-sm;
+}
+
+.responsive-max-w-md {
+  @apply max-w-sm sm:max-w-md;
+}
+
+.responsive-max-w-lg {
+  @apply max-w-md sm:max-w-lg;
+}
+
+.responsive-max-w-xl {
+  @apply max-w-lg sm:max-w-xl;
+}
+
+/* Responsive z-index utilities */
+.responsive-z-modal {
+  @apply z-40 sm:z-50 lg:z-60;
+}
+
+.responsive-z-dropdown {
+  @apply z-30 sm:z-40 lg:z-50;
+}
+
+/* Responsive min-height utilities */
+.responsive-min-h-screen {
+  @apply min-h-screen sm:min-h-0;
+}
+
+.responsive-min-h-content {
+  @apply min-h-96 sm:min-h-0;
+}
