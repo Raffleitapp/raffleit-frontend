@@ -25,7 +25,7 @@ export const Footer = () => {
                 </div>
                 <div className="col-span-1 ml-4">
                     <h2 className="text-lg font-bold">Contact Us</h2>
-                    <p className="text-sm">Email: info@Funditzone.com</p>
+                    <p className="text-sm">Email: info@funditzone.com</p>
                     <p className="text-sm">Phone: +1 234 567 890</p>
                     <p className="text-sm">Address: 123 Funditzone St, City, Country</p>
                 </div>
