@@ -45,7 +45,7 @@ const Users = () => {
         });
         if (!res.ok) throw new Error('Failed to fetch users');
         const data = await res.json();
-
+        
         // Map backend fields to frontend User type if needed
         interface BackendUser {
           id: string | number;

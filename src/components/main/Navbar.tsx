@@ -299,6 +299,7 @@ const Navbar = () => {
         <header className="fixed top-0 left-0 w-full bg-gray-800 text-white p-4 z-50">
             <nav className="flex justify-between items-center">
                 <div className="text-lg font-bold">Funditzone</div>
+              
                 {/* Desktop Menu */}
                 <ul className="hidden md:flex space-x-4">
                     {menuItems.map((item) => (

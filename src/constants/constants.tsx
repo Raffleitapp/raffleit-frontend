@@ -1,3 +1,5 @@
 export const API_BASE_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:8003/api'
-    : 'https://api.funditzone.com/api';
+    ? 'http://localhost:8000'
+    : 'https://api.funditzone.com';
+export const APP_VERSION = 'V1.0.0';
+export const APP_NAME = 'Funditzone';
