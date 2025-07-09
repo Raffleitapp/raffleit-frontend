@@ -631,6 +631,7 @@ export function Raffles() {
           raffle={convertToRaffleCardData(selectedRaffle)}
           isOpen={showDetailsModal}
           onClose={closeDetailsModal}
+          onShare={handleShare}
           isDashboard={true}
         >
           {/* Dashboard Payment Section */}
@@ -677,7 +678,26 @@ export function Raffles() {
               </div>
             )}
 
-            {(donationMode || selectedRaffle.type === 'fundraising') ? (
+            {!user ? (
+              <div className="text-center p-6 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg">
+                <h3 className="text-lg font-semibold mb-2">Join the Fun!</h3>
+                <p className="mb-4">Please create an account or log in to {selectedRaffle.type === 'raffle' ? 'purchase tickets or donate' : 'make a donation'}</p>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => window.location.href = '/login'}
+                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold"
+                  >
+                    Log In
+                  </button>
+                  <button
+                    onClick={() => window.location.href = '/register'}
+                    className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-semibold"
+                  >
+                    Sign Up
+                  </button>
+                </div>
+              </div>
+            ) : (donationMode || selectedRaffle.type === 'fundraising') ? (
               /* Donation Section */
               <div className="space-y-6">
                 <div>

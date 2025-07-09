@@ -37,7 +37,7 @@ const PaymentOptions: FC<PaymentOptionsProps> = ({
         <button
           onClick={onPayPalClick}
           disabled={disabled || purchasing}
-          className={`flex-1 px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 flex items-center justify-center gap-3 ${
+          className={`flex-1 px-6 py-4 bg-yellow-400 text-slate-800 rounded-lg hover:bg-yellow-500 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 flex items-center justify-center gap-3 ${
             isDashboard ? 'shadow-md' : ''
           }`}
         >
