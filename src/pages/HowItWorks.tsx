@@ -15,7 +15,7 @@ export const HowItWorks = () => {
       />
       <div className="container py-4 px-4 mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-6xl font-bold py-2 px-2">How <span className="text-btn-primary">Raffles</span> works</h1>
+          <h1 className="text-3xl md:text-6xl font-bold py-2 px-2">How <span className="text-btn-primary">Funditzone</span> works</h1>
           <p className="text-xl md:text-2xl font-semibold py-2 px-2">Funditzone has several benefits</p>
         </div>
         <div className="grid grid-cols-1 gap-x-4 gap-y-6 md:grid-cols-4">

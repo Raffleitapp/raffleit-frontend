@@ -406,42 +406,42 @@ const PublicRaffles = () => {
       />
       
       {/* Stats Section */}
-      <div className="bg-slate-800 py-12">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center text-indigo-400 mb-8">
+      <div className="bg-slate-800 py-8 sm:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center text-indigo-400 mb-6 sm:mb-8">
             Current <span className='text-white'>Opportunities</span>
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
             <div className="text-center text-white">
-              <div className="text-4xl font-bold text-indigo-400 mb-2">{raffles.length}</div>
-              <div className="text-lg text-slate-300">Active Campaigns</div>
+              <div className="text-3xl sm:text-4xl font-bold text-indigo-400 mb-2">{raffles.length}</div>
+              <div className="text-base sm:text-lg text-slate-300">Active Campaigns</div>
             </div>
             <div className="text-center text-white">
-              <div className="text-4xl font-bold text-indigo-400 mb-2">
+              <div className="text-3xl sm:text-4xl font-bold text-indigo-400 mb-2">
                 {raffles.filter(r => r.type === 'raffle').length}
               </div>
-              <div className="text-lg text-slate-300">Live Raffles</div>
+              <div className="text-base sm:text-lg text-slate-300">Live Raffles</div>
             </div>
             <div className="text-center text-white">
-              <div className="text-4xl font-bold text-indigo-400 mb-2">
+              <div className="text-3xl sm:text-4xl font-bold text-indigo-400 mb-2">
                 {raffles.filter(r => r.type === 'fundraising').length}
               </div>
-              <div className="text-lg text-slate-300">Fundraising Campaigns</div>
+              <div className="text-base sm:text-lg text-slate-300">Fundraising Campaigns</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div id="raffles" className="bg-gray-50 py-12">
-        <div className="max-w-7xl mx-auto px-6">
+      <div id="raffles" className="bg-gray-50 py-8 sm:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {raffles.length === 0 ? (
-            <div className="bg-white p-8 rounded-lg shadow-md text-center">
+            <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md text-center">
               <p className="text-gray-500 text-lg">No active raffles or fundraising campaigns at the moment.</p>
               <p className="text-gray-400 mt-2">Check back soon for new opportunities!</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
               {raffles.map((raffle) => (
                 <RaffleCard 
                   key={raffle.id}
@@ -467,16 +467,16 @@ const PublicRaffles = () => {
           timeLeft={timeLeft[selectedRaffle.id]}
         >
           {/* Custom Purchase/Donation Section */}
-          <div className="border-t pt-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-semibold text-slate-800">
+          <div className="border-t pt-4 sm:pt-6 lg:pt-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-slate-800">
                 {selectedRaffle.type === 'raffle' ? 'Purchase Tickets or Donate' : 'Make a Donation'}
               </h2>
               {selectedRaffle.type === 'raffle' && (
                 <div className="flex bg-slate-100 rounded-lg p-1">
                   <button
                     onClick={() => setDonationMode(false)}
-                    className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                    className={`px-3 sm:px-4 py-2 rounded text-xs sm:text-sm font-medium transition-colors ${
                       !donationMode 
                         ? 'bg-white text-indigo-600 shadow-sm' 
                         : 'text-slate-600 hover:text-slate-800'
@@ -486,7 +486,7 @@ const PublicRaffles = () => {
                   </button>
                   <button
                     onClick={() => setDonationMode(true)}
-                    className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                    className={`px-3 sm:px-4 py-2 rounded text-xs sm:text-sm font-medium transition-colors ${
                       donationMode 
                         ? 'bg-white text-emerald-600 shadow-sm' 
                         : 'text-slate-600 hover:text-slate-800'
@@ -511,21 +511,27 @@ const PublicRaffles = () => {
             )}
 
             {!user ? (
-              <div className="text-center p-6 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg">
-                <h3 className="text-lg font-semibold mb-2">Join the Fun!</h3>
-                <p className="mb-4">Please create an account or log in to {selectedRaffle.type === 'raffle' ? 'purchase tickets or donate' : 'make a donation'}</p>
-                <div className="flex gap-3 justify-center">
+              <div className="text-center p-4 sm:p-6 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg">
+                <h3 className="text-base sm:text-lg font-semibold mb-2">Join the Fun!</h3>
+                <p className="mb-4 text-sm sm:text-base">Please create an account or log in to {selectedRaffle.type === 'raffle' ? 'purchase tickets or donate' : 'make a donation'}</p>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
                   <button
                     onClick={() => window.location.href = '/login'}
-                    className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold"
+                    className="px-4 sm:px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm sm:text-base"
                   >
                     Log In
                   </button>
                   <button
                     onClick={() => window.location.href = '/register'}
-                    className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-semibold"
+                    className="px-4 sm:px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-semibold text-sm sm:text-base"
                   >
                     Sign Up
+                  </button>
+                  <button
+                    onClick={closeRaffleModal}
+                    className="px-4 sm:px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium text-sm sm:text-base"
+                  >
+                    Cancel
                   </button>
                 </div>
               </div>
@@ -575,7 +581,7 @@ const PublicRaffles = () => {
 
                 <PaymentOptions
                   onPayPalClick={() => handlePayment('paypal')}
-                  onPaddleClick={() => handlePayment('paddle')}
+                  onCancel={closeRaffleModal}
                   disabled={!donationAmount || parseFloat(donationAmount) <= 0}
                   purchasing={purchasing}
                 />
@@ -624,7 +630,7 @@ const PublicRaffles = () => {
 
                 <PaymentOptions
                   onPayPalClick={() => handlePayment('paypal')}
-                  onPaddleClick={() => handlePayment('paddle')}
+                  onCancel={closeRaffleModal}
                   disabled={false}
                   purchasing={purchasing}
                 />

@@ -41,16 +41,16 @@ export const Login = () => {
 
   return (
     <>
-      <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+      <div className="flex min-h-full flex-1 flex-col justify-center px-4 py-6 sm:px-6 sm:py-12 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-          <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
+          <h2 className="mt-6 sm:mt-10 text-center text-xl sm:text-2xl/9 font-bold tracking-tight text-gray-900">
             Sign in to your account
           </h2>
         </div>
 
-        <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-          <div className="rounded-lg bg-white shadow-md p-4">
-            <form action="#" method="POST" className="space-y-6">
+        <div className="mt-6 sm:mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+          <div className="rounded-lg bg-white shadow-md p-4 sm:p-6">
+            <form action="#" method="POST" className="space-y-4 sm:space-y-6">
               <div>
                 <label
                   htmlFor="email"
@@ -65,7 +65,7 @@ export const Login = () => {
                     type="email"
                     required
                     autoComplete="email"
-                    className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
+                    className="block w-full rounded-md bg-white px-3 py-2 text-sm sm:text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
                   />
                 </div>
               </div>
@@ -80,7 +80,7 @@ export const Login = () => {
                   </label>
                   <div className="text-sm">
                     <a
-                      href="#"
+                      href="/forgot-password"
                       className="font-semibold text-indigo-600 hover:text-indigo-500"
                     >
                       Forgot password?
@@ -94,12 +94,12 @@ export const Login = () => {
                     type="password"
                     required
                     autoComplete="current-password"
-                    className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
+                    className="block w-full rounded-md bg-white px-3 py-2 text-sm sm:text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
                   />
                 </div>
               </div>
 
-              <div>
+              <div className="space-y-3">
                 <button
                   type="button"
                   onClick={async () => {
@@ -122,10 +122,20 @@ export const Login = () => {
                       }
                     }
                   }}
-                  className="flex w-full justify-center rounded-md bg-btn-primary transition duration-100 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  className="flex w-full justify-center rounded-md bg-btn-primary transition duration-100 px-3 py-2 sm:py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 >
                   Sign in
                 </button>
+                
+                {/* Cancel/Back Button */}
+                <button
+                  type="button"
+                  onClick={() => navigate('/')}
+                  className="flex w-full justify-center rounded-md bg-slate-100 text-slate-600 px-3 py-2 sm:py-1.5 text-sm/6 font-medium hover:bg-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                
                 <style>{`
                   .loader {
                     border: 2px solid #f3f3f3;
@@ -150,22 +160,23 @@ export const Login = () => {
               </div>
             </form>
 
-            <div className="mt-6">
+            <div className="mt-4 sm:mt-6">
               <button
                 type="button"
-                className="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm/6 font-semibold text-gray-900 shadow-xs hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                className="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 sm:py-1.5 text-sm/6 font-semibold text-gray-900 shadow-xs hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
                 <img
                   src="https://www.google.com/favicon.ico"
                   alt="Google"
-                  className="h-5 w-5 mr-2"
+                  className="h-4 w-4 sm:h-5 sm:w-5 mr-2"
                 />
-                Sign in with Google
+                <span className="hidden sm:inline">Sign in with Google</span>
+                <span className="sm:hidden">Google</span>
               </button>
             </div>
           </div>
 
-          <p className="mt-10 text-center text-sm/6 text-gray-500">
+          <p className="mt-6 sm:mt-10 text-center text-sm/6 text-gray-500">
             Not a member?{' '}
             <a
               href="/register"

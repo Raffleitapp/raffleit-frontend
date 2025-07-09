@@ -3,7 +3,8 @@ import { CreditCard } from 'lucide-react';
 
 interface PaymentOptionsProps {
   onPayPalClick: () => void;
-  onPaddleClick: () => void;
+  onPaddleClick?: () => void; // Make optional since it's disabled
+  onCancel?: () => void; // Cancel callback
   disabled?: boolean;
   purchasing?: boolean;
   isDashboard?: boolean;
@@ -11,7 +12,8 @@ interface PaymentOptionsProps {
 
 const PaymentOptions: FC<PaymentOptionsProps> = ({
   onPayPalClick,
-  onPaddleClick,
+  // onPaddleClick, // Disabled for now
+  onCancel,
   disabled = false,
   purchasing = false,
   isDashboard = false,
@@ -31,29 +33,66 @@ const PaymentOptions: FC<PaymentOptionsProps> = ({
   );
 
   return (
-    <div className="border-t pt-4">
-      <p className="text-center text-sm text-slate-500 mb-4">Select a payment method</p>
-      <div className="flex gap-4">
+    <div className="border-t pt-3 sm:pt-4">
+      <p className="text-center text-xs sm:text-sm text-slate-500 mb-3 sm:mb-4">Select a payment method</p>
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <button
           onClick={onPayPalClick}
           disabled={disabled || purchasing}
-          className={`flex-1 px-6 py-4 bg-yellow-400 text-slate-800 rounded-lg hover:bg-yellow-500 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 flex items-center justify-center gap-3 ${
+          className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 bg-yellow-400 text-slate-800 rounded-lg hover:bg-yellow-500 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base ${
             isDashboard ? 'shadow-md' : ''
           }`}
         >
           <PayPalIcon />
-          <span>{purchasing ? 'Processing...' : 'PayPal'}</span>
+          <span className="hidden xs:inline">{purchasing ? 'Processing...' : 'PayPal'}</span>
+          <span className="xs:hidden">{purchasing ? 'Processing...' : 'Pay'}</span>
         </button>
-        <button
+        
+        {/* Active Paddle Button - Uncomment when ready to enable */}
+        {/* <button
           onClick={onPaddleClick}
           disabled={disabled || purchasing}
-          className={`flex-1 px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 flex items-center justify-center gap-3 ${
+          className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base ${
             isDashboard ? 'shadow-md' : ''
           }`}
         >
           <PaddleIcon />
-          <span>{purchasing ? 'Processing...' : 'Pay with Card'}</span>
+          <span className="hidden xs:inline">{purchasing ? 'Processing...' : 'Pay with Card'}</span>
+          <span className="xs:hidden">{purchasing ? 'Processing...' : 'Card'}</span>
+        </button> */}
+        
+        {/* Disabled Paddle Button - Remove when ready to enable */}
+        <button
+          disabled={true}
+          className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 bg-slate-300 text-slate-500 rounded-lg cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base ${
+            isDashboard ? 'shadow-md' : ''
+          }`}
+        >
+          <PaddleIcon />
+          <span className="hidden xs:inline">Card Payments - Coming Soon</span>
+          <span className="xs:hidden">Coming Soon</span>
         </button>
+      </div>
+      
+      {/* Cancel Button Section */}
+      <div className="mt-4 pt-3 border-t border-slate-200">
+        <div className="text-center">
+          <button
+            className="px-4 sm:px-6 py-2 sm:py-3 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors font-medium text-sm sm:text-base min-w-[80px]"
+            onClick={() => {
+              if (onCancel) {
+                onCancel();
+              } else {
+                // Fallback: dispatch custom event for backward compatibility
+                const event = new CustomEvent('cancelPayment');
+                window.dispatchEvent(event);
+              }
+            }}
+            disabled={purchasing}
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );

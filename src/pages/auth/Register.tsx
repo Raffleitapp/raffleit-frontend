@@ -68,16 +68,16 @@ export const Register = () => {
   };
 
   return (
-    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+    <div className="flex min-h-full flex-1 flex-col justify-center px-4 py-6 sm:px-6 sm:py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
+        <h2 className="mt-6 sm:mt-10 text-center text-xl sm:text-2xl/9 font-bold tracking-tight text-gray-900">
           Register an account
         </h2>
       </div>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <div className="rounded-lg bg-white shadow-md p-4">
-          <form onSubmit={handleRegister} className="space-y-6">
+      <div className="mt-6 sm:mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+        <div className="rounded-lg bg-white shadow-md p-4 sm:p-6">
+          <form onSubmit={handleRegister} className="space-y-4 sm:space-y-6">
             <div>
               <label
                 htmlFor="first_name"
@@ -93,7 +93,7 @@ export const Register = () => {
                   required
                   value={first_name}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
+                  className="block w-full rounded-md bg-white px-3 py-2 text-sm sm:text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
                 />
               </div>
             </div>
@@ -113,7 +113,7 @@ export const Register = () => {
                   required
                   value={last_name}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
+                  className="block w-full rounded-md bg-white px-3 py-2 text-sm sm:text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
                 />
               </div>
             </div>
@@ -167,7 +167,7 @@ export const Register = () => {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
+                  className="block w-full rounded-md bg-white px-3 py-2 text-sm sm:text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
                 />
               </div>
             </div>
@@ -188,7 +188,7 @@ export const Register = () => {
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
+                  className="block w-full rounded-md bg-white px-3 py-2 text-sm sm:text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
                 />
               </div>
             </div>
@@ -209,7 +209,7 @@ export const Register = () => {
                   autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
+                  className="block w-full rounded-md bg-white px-3 py-2 text-sm sm:text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-1 focus:-outline-offset-1 focus:outline-black sm:text-sm/6"
                 />
               </div>
             </div>
@@ -217,11 +217,11 @@ export const Register = () => {
               <div className="text-red-500 text-sm text-center">{error}</div>
             )}
 
-            <div>
+            <div className="space-y-3">
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex w-full justify-center rounded-md bg-btn-primary transition duration-100 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+                className="flex w-full justify-center rounded-md bg-btn-primary transition duration-100 px-3 py-2 sm:py-1.5 text-sm/6 font-semibold text-white shadow-xs hover:bg-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
               >
                 {isLoading ? (
                   <>
@@ -231,6 +231,17 @@ export const Register = () => {
                   'Register'
                 )}
               </button>
+              
+              {/* Cancel/Back Button */}
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="flex w-full justify-center rounded-md bg-slate-100 text-slate-600 px-3 py-2 sm:py-1.5 text-sm/6 font-medium hover:bg-slate-200 transition-colors"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              
               <style>{`
                 .loader {
                   border: 2px solid #f3f3f3;
@@ -255,22 +266,23 @@ export const Register = () => {
             </div>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-4 sm:mt-6">
             <button
               type="button"
-              className="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm/6 font-semibold text-gray-900 shadow-xs hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              className="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 sm:py-1.5 text-sm/6 font-semibold text-gray-900 shadow-xs hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               <img
                 src="https://www.google.com/favicon.ico"
                 alt="Google"
-                className="h-5 w-5 mr-2"
+                className="h-4 w-4 sm:h-5 sm:w-5 mr-2"
               />
-              Register with Google
+              <span className="hidden sm:inline">Register with Google</span>
+              <span className="sm:hidden">Google</span>
             </button>
           </div>
         </div>
 
-        <p className="mt-10 text-center text-sm/6 text-gray-500">
+        <p className="mt-6 sm:mt-10 text-center text-sm/6 text-gray-500">
           Already a member?{' '}
           <a
             href="/login"

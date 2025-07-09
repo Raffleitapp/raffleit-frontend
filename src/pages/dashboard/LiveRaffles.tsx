@@ -430,7 +430,7 @@ const LiveRaffles = () => {
 
               <PaymentOptions
                 onPayPalClick={() => handlePayment('paypal')}
-                onPaddleClick={() => handlePayment('paddle')}
+                onCancel={() => setSelectedRaffle(null)}
                 disabled={!donationAmount || parseFloat(donationAmount) <= 0}
                 purchasing={purchasing}
                 isDashboard={true}
@@ -478,7 +478,7 @@ const LiveRaffles = () => {
 
               <PaymentOptions
                 onPayPalClick={() => handlePayment('paypal')}
-                onPaddleClick={() => handlePayment('paddle')}
+                onCancel={() => setSelectedRaffle(null)}
                 disabled={false}
                 purchasing={purchasing}
                 isDashboard={true}
