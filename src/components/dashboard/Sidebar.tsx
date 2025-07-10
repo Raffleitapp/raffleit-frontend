@@ -1,4 +1,4 @@
-import { Dices, LayoutDashboard, LogOut, Settings, Ticket, User, Users, Menu, X, ChartNoAxesCombined, FileChartColumn, Home } from "lucide-react";
+import { Radio, LayoutDashboard, LogOut, Settings, Ticket, User, Users, Menu, X, FileText, Home, Trophy, Tags, BarChart3 } from "lucide-react";
 import { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 
@@ -12,15 +12,15 @@ const USER_ROLES = {
 const sidebarItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", roles: [USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.HOST] },
     { icon: Home, label: "Website Home", href: "/", roles: [USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.HOST] },
-    { icon: LayoutDashboard, label: "Category", href: "/dashboard/category", roles: [USER_ROLES.ADMIN] },
+    { icon: Radio, label: "Live Raffles", href: "/dashboard/live-raffles", roles: [USER_ROLES.ADMIN, USER_ROLES.USER] },
+    { icon: Trophy, label: "Completed Raffles", href: "/dashboard/completed-raffles", roles: [USER_ROLES.ADMIN, USER_ROLES.USER] },
     { icon: Ticket, label: "Tickets", href: "/dashboard/tickets", roles: [USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.HOST] },
-    { icon: Dices, label: "Live Raffles", href: "/dashboard/live-raffles", roles: [USER_ROLES.ADMIN, USER_ROLES.USER] },
-    { icon: LayoutDashboard, label: "Completed Raffles", href: "/dashboard/completed-raffles", roles: [USER_ROLES.ADMIN, USER_ROLES.USER] },
-    { icon: ChartNoAxesCombined, label: "Analytics", href: "/dashboard/analytics", roles: [USER_ROLES.ADMIN] },
-    { icon: FileChartColumn, label: "Reports", href: "/dashboard/reports", roles: [USER_ROLES.ADMIN] },
+    { icon: Tags, label: "Category", href: "/dashboard/category", roles: [USER_ROLES.ADMIN] },
     { icon: Users, label: "Users", href: "/dashboard/users", roles: [USER_ROLES.ADMIN] },
-    { icon: Settings, label: "Settings", href: "/dashboard/settings", roles: [USER_ROLES.ADMIN, USER_ROLES.HOST, USER_ROLES.USER] },
+    { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics", roles: [USER_ROLES.ADMIN] },
+    { icon: FileText, label: "Reports", href: "/dashboard/reports", roles: [USER_ROLES.ADMIN] },
     { icon: User, label: "Profile", href: "/dashboard/profile", roles: [USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.HOST] },
+    { icon: Settings, label: "Settings", href: "/dashboard/settings", roles: [USER_ROLES.ADMIN, USER_ROLES.HOST, USER_ROLES.USER] },
     { icon: LogOut, label: "Logout", href: "#logout", roles: [USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.HOST] },
 ];
 

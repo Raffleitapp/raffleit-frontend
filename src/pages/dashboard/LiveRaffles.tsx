@@ -14,10 +14,29 @@ const LiveRaffles = () => {
   const [showRaffleModal, setShowRaffleModal] = useState(false);
   const [ticketQuantity, setTicketQuantity] = useState(1);
   const [donationAmount, setDonationAmount] = useState<string>('');
-  const [donationMode, setDonationMode] = useState(false); // Toggle between ticket purchase and donation
   const [purchasing, setPurchasing] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState<string | null>(null);
+
+  // Add quantity management functions
+  const handleQuantityChange = (value: string) => {
+    const numValue = parseInt(value);
+    if (!isNaN(numValue) && numValue >= 1 && numValue <= 100) {
+      setTicketQuantity(numValue);
+    }
+  };
+
+  const incrementQuantity = () => {
+    if (ticketQuantity < 100) {
+      setTicketQuantity(ticketQuantity + 1);
+    }
+  };
+
+  const decrementQuantity = () => {
+    if (ticketQuantity > 1) {
+      setTicketQuantity(ticketQuantity - 1);
+    }
+  };
 
   useEffect(() => {
     const fetchLiveRaffles = async () => {
@@ -135,7 +154,6 @@ const LiveRaffles = () => {
     setShowRaffleModal(true);
     setTicketQuantity(1);
     setDonationAmount('');
-    setDonationMode(raffle.type === 'fundraising');
     setPurchaseError(null);
     setPurchaseSuccess(null);
   };
@@ -145,7 +163,6 @@ const LiveRaffles = () => {
     setSelectedRaffle(null);
     setTicketQuantity(1);
     setDonationAmount('');
-    setDonationMode(false);
     setPurchaseError(null);
     setPurchaseSuccess(null);
   };
@@ -160,7 +177,7 @@ const LiveRaffles = () => {
     setPurchaseError(null);
     setPurchaseSuccess(null);
 
-    const isDonation = donationMode || selectedRaffle.type === 'fundraising';
+    const isDonation = selectedRaffle.type === 'fundraising';
     const amount = isDonation ? parseFloat(donationAmount) : (selectedRaffle.ticketPrice || 0) * ticketQuantity;
     
     if (isNaN(amount) || amount <= 0) {
@@ -350,24 +367,8 @@ const LiveRaffles = () => {
           <div className="border-t pt-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-slate-800">
-              {selectedRaffle?.type === 'raffle' ? 'Purchase Tickets or Donate' : 'Make a Donation'}
+              {selectedRaffle?.type === 'raffle' ? 'Purchase Tickets' : 'Make a Donation'}
             </h2>
-            {selectedRaffle?.type === 'raffle' && (
-              <div className="flex bg-slate-100 rounded-lg p-1">
-                <button
-                  onClick={() => setDonationMode(false)}
-                  className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${!donationMode ? 'bg-white shadow' : 'text-slate-600'}`}
-                >
-                  Tickets
-                </button>
-                <button
-                  onClick={() => setDonationMode(true)}
-                  className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${donationMode ? 'bg-white shadow' : 'text-slate-600'}`}
-                >
-                  Donate
-                </button>
-              </div>
-            )}
           </div>
 
           {purchaseSuccess && (
@@ -376,22 +377,12 @@ const LiveRaffles = () => {
             </div>
           )}
           {purchaseError && (
-            <div className="mb-4 p-4 bg-rose-100 border border-rose-400 text-rose-700 rounded-lg">
+            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
               {purchaseError}
             </div>
           )}
 
-          {!user ? (
-            <div className="text-center p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg">
-              <p className="mb-2">Please log in to {selectedRaffle?.type === 'raffle' ? 'purchase tickets or donate' : 'make a donation'}</p>
-              <button
-                onClick={() => window.location.href = '/login'}
-                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
-              >
-                Log In
-              </button>
-            </div>
-          ) : (donationMode || selectedRaffle?.type === 'fundraising') ? (
+          {selectedRaffle?.type === 'fundraising' ? (
             /* Donation Section */
             <div className="space-y-4">
               <div>
@@ -439,38 +430,45 @@ const LiveRaffles = () => {
           ) : (
             /* Ticket Purchase Section */
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <label htmlFor="quantity" className="text-sm font-medium text-slate-700">
-                  Number of tickets:
+              <div>
+                <label htmlFor="ticket-quantity" className="block text-sm font-medium text-slate-700 mb-2">
+                  Number of Tickets
                 </label>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setTicketQuantity(Math.max(1, ticketQuantity - 1))}
-                    className="w-8 h-8 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 transition-colors flex items-center justify-center"
-                    disabled={purchasing}
+                    type="button"
+                    onClick={decrementQuantity}
+                    disabled={purchasing || ticketQuantity <= 1}
+                    className="flex items-center justify-center w-10 h-10 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-lg font-bold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    -
+                    −
                   </button>
                   <input
+                    id="ticket-quantity"
                     type="number"
-                    id="quantity"
+                    min="1"
+                    max="100"
                     value={ticketQuantity}
-                    onChange={(e) => setTicketQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                    className="w-16 text-center border-slate-300 rounded-md"
+                    onChange={(e) => handleQuantityChange(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center font-medium"
                     disabled={purchasing}
                   />
                   <button
-                    onClick={() => setTicketQuantity(ticketQuantity + 1)}
-                    className="w-8 h-8 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 transition-colors flex items-center justify-center"
-                    disabled={purchasing}
+                    type="button"
+                    onClick={incrementQuantity}
+                    disabled={purchasing || ticketQuantity >= 100}
+                    className="flex items-center justify-center w-10 h-10 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-lg font-bold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     +
                   </button>
                 </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  {ticketQuantity} ticket{ticketQuantity !== 1 ? 's' : ''} selected (max 100)
+                </p>
               </div>
 
               <div className="flex justify-between items-center p-4 bg-indigo-50 rounded-lg">
-                <span className="text-lg font-semibold text-indigo-800">Total Price:</span>
+                <span className="text-lg font-semibold text-indigo-800">Total Cost:</span>
                 <span className="text-2xl font-bold text-indigo-600">
                   ${typeof selectedRaffle?.ticketPrice === 'number' ? (selectedRaffle.ticketPrice * ticketQuantity).toFixed(2) : 'N/A'}
                 </span>

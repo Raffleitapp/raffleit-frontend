@@ -4,7 +4,7 @@ import { API_BASE_URL } from '../../constants/constants';
 interface CategoryItem {
   id: number;
   category_name: string;
-  raffleCount?: number;
+  raffles_count?: number;
 }
 
 const Category = () => {
@@ -244,7 +244,7 @@ const Category = () => {
                 <tr key={category.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{category.id}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{category.category_name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{category.raffleCount ?? 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{category.raffles_count ?? 0}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => handleEdit(category)}
