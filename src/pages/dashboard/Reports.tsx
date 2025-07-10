@@ -54,7 +54,14 @@ interface ReportData {
     transactions: number;
     revenue: number;
   }>;
-  payment_methods: Record<string, { count: number; revenue: number }>;
+  payment_methods: Record<string, { 
+    count: number; 
+    revenue: number; 
+    successful_count: number; 
+    failed_count: number; 
+    avg_amount: number; 
+    success_rate: number; 
+  }>;
 }
 
 interface UserMetrics {
@@ -178,18 +185,42 @@ const Reports = () => {
   const exportToPDF = () => {
     const doc = new jsPDF();
     const currentDate = new Date().toLocaleDateString();
-    const reportTitle = `RaffleIt Reports - ${period} (${currentDate})`;
     
-    // Add title
-    doc.setFontSize(18);
-    doc.text(reportTitle, 20, 20);
+    // Add header with branding
+    doc.setFillColor(71, 85, 105); // Slate color
+    doc.rect(0, 0, 210, 40, 'F');
     
-    let yPosition = 40;
+    // Add logo/company name
+    doc.setFontSize(24);
+    doc.setTextColor(255, 255, 255);
+    doc.text('RaffleIt', 20, 25);
     
-    // Financial Summary
+    // Add subtitle
     doc.setFontSize(14);
-    doc.text('Financial Summary', 20, yPosition);
-    yPosition += 10;
+    doc.setTextColor(255, 255, 255);
+    doc.text('Analytics Report', 20, 35);
+    
+    // Add report period and date
+    doc.setFontSize(10);
+    doc.text(`Period: ${period.toUpperCase()} | Generated: ${currentDate}`, 120, 25);
+    doc.text(`Report ID: ${Date.now()}`, 120, 35);
+    
+    // Reset text color for content
+    doc.setTextColor(0, 0, 0);
+    
+    let yPosition = 55;
+    
+    // Financial Summary Section
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('📊 Financial Summary', 20, yPosition);
+    yPosition += 5;
+    
+    // Add a line under the section header
+    doc.setDrawColor(71, 85, 105);
+    doc.setLineWidth(0.5);
+    doc.line(20, yPosition, 190, yPosition);
+    yPosition += 15;
     
     if (reportData) {
       const financialData = [
@@ -213,10 +244,17 @@ const Reports = () => {
       yPosition = (doc as any).lastAutoTable.finalY + 20;
     }
     
-    // User Metrics
-    doc.setFontSize(14);
-    doc.text('User Metrics', 20, yPosition);
-    yPosition += 10;
+    // User Metrics Section
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('👥 User Metrics', 20, yPosition);
+    yPosition += 5;
+    
+    // Add section line
+    doc.setDrawColor(71, 85, 105);
+    doc.setLineWidth(0.5);
+    doc.line(20, yPosition, 190, yPosition);
+    yPosition += 15;
     
     if (userMetrics) {
       const userData = [
@@ -240,10 +278,17 @@ const Reports = () => {
       yPosition = (doc as any).lastAutoTable.finalY + 20;
     }
     
-    // Raffle Metrics
-    doc.setFontSize(14);
+    // Raffle Metrics Section
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
     doc.text('Raffle Metrics', 20, yPosition);
-    yPosition += 10;
+    yPosition += 5;
+    
+    // Add section line
+    doc.setDrawColor(71, 85, 105);
+    doc.setLineWidth(0.5);
+    doc.line(20, yPosition, 190, yPosition);
+    yPosition += 15;
     
     if (raffleMetrics) {
       const raffleData = [
@@ -264,10 +309,70 @@ const Reports = () => {
         styles: { fontSize: 10 },
         headStyles: { fillColor: [71, 85, 105] }
       });
+      
+      yPosition = (doc as any).lastAutoTable.finalY + 20;
+    }
+    
+    // Payment Methods Section
+    if (reportData?.payment_methods && Object.keys(reportData.payment_methods).length > 0) {
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('💳 Payment Methods Performance', 20, yPosition);
+      yPosition += 5;
+      
+      // Add section line
+      doc.setDrawColor(71, 85, 105);
+      doc.setLineWidth(0.5);
+      doc.line(20, yPosition, 190, yPosition);
+      yPosition += 15;
+      
+      const paymentData = Object.entries(reportData.payment_methods).map(([method, data]) => [
+        method,
+        data.count?.toString() || '0',
+        data.successful_count?.toString() || '0',
+        data.failed_count?.toString() || '0',
+        `${(data.success_rate || 0).toFixed(1)}%`,
+        `$${(data.revenue || 0).toFixed(2)}`,
+        `$${(data.avg_amount || 0).toFixed(2)}`
+      ]);
+      
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Method', 'Total', 'Success', 'Failed', 'Success Rate', 'Revenue', 'Avg Amount']],
+        body: paymentData,
+        theme: 'striped',
+        headStyles: { fillColor: [71, 85, 105] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 20, right: 20 },
+        styles: { fontSize: 9 }
+      });
+      
+      yPosition = (doc as any).lastAutoTable.finalY + 20;
+    }
+    
+    // Add footer
+    const pageCount = doc.internal.pages.length - 1;
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      
+      // Footer background
+      doc.setFillColor(248, 250, 252);
+      doc.rect(0, 280, 210, 17, 'F');
+      
+      // Footer text
+      doc.setFontSize(8);
+      doc.setTextColor(71, 85, 105);
+      doc.text('RaffleIt Analytics Report', 20, 290);
+      doc.text(`Page ${i} of ${pageCount}`, 170, 290);
+      doc.text(`Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 20, 295);
+      
+      // Website
+      doc.setTextColor(59, 130, 246);
+      doc.text('www.raffleit.com', 150, 295);
     }
     
     // Save the PDF
-    doc.save(`reports-${period}-${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`raffleit-analytics-report-${period}-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   const exportToExcel = () => {
@@ -288,10 +393,18 @@ const Reports = () => {
       // Add payment methods data
       if (reportData.payment_methods && Object.keys(reportData.payment_methods).length > 0) {
         financialData.push(['', '']);
-        financialData.push(['Payment Methods', '']);
-        financialData.push(['Method', 'Count', 'Revenue']);
+        financialData.push(['Payment Methods Performance', '']);
+        financialData.push(['Method', 'Total Trans.', 'Successful', 'Failed', 'Success Rate (%)', 'Revenue', 'Avg Amount']);
         Object.entries(reportData.payment_methods).forEach(([method, data]) => {
-          financialData.push([method, data.count, data.revenue]);
+          financialData.push([
+            method, 
+            data.count, 
+            data.successful_count, 
+            data.failed_count, 
+            data.success_rate, 
+            data.revenue, 
+            data.avg_amount
+          ]);
         });
       }
       
@@ -735,8 +848,11 @@ const Reports = () => {
                   <thead>
                     <tr className="bg-slate-50">
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Method</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Transactions</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Revenue</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total Transactions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Successful</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Failed</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Success Rate</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total Revenue</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Avg Amount</th>
                     </tr>
                   </thead>
@@ -744,16 +860,34 @@ const Reports = () => {
                     {Object.entries(reportData?.payment_methods || {}).map(([method, data]) => (
                       <tr key={method} className="hover:bg-slate-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 capitalize">
-                          {method}
+                          <div className="flex items-center">
+                            <span className="inline-block w-3 h-3 rounded-full bg-slate-300 mr-2"></span>
+                            {method}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
                           {data.count || 0}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
+                          {data.successful_count || 0}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
+                          {data.failed_count || 0}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            (data.success_rate || 0) >= 90 ? 'bg-green-100 text-green-800' :
+                            (data.success_rate || 0) >= 75 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {(data.success_rate || 0).toFixed(1)}%
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
                           ${(data.revenue || 0).toFixed(2)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                          ${data.count > 0 ? (data.revenue / data.count).toFixed(2) : '0.00'}
+                          ${(data.avg_amount || 0).toFixed(2)}
                         </td>
                       </tr>
                     ))}
@@ -1052,19 +1186,56 @@ const Reports = () => {
             {/* Raffles by Category */}
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
               <h2 className="text-xl font-semibold text-slate-800 mb-4">Raffles by Category</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Object.entries(raffleMetrics?.raffles_by_category || {}).map(([category, count]) => (
-                  <div key={category} className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg shadow-sm border border-slate-200 p-6">
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-slate-700">{category || 'Uncategorized'}</p>
-                      <p className="text-2xl font-bold text-slate-800">{count}</p>
-                      <p className="text-xs text-slate-500">
-                        {raffleMetrics?.total_raffles && raffleMetrics.total_raffles > 0 ? 
-                          ((count / raffleMetrics.total_raffles) * 100).toFixed(1) : '0.0'}%
-                      </p>
-                    </div>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="min-w-full table-auto">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Category</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total Raffles</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Percentage</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Distribution</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-200">
+                    {Object.entries(raffleMetrics?.raffles_by_category || {})
+                      .sort(([, a], [, b]) => b - a) // Sort by count descending
+                      .map(([category, count]) => {
+                        const percentage = raffleMetrics?.total_raffles && raffleMetrics.total_raffles > 0 ? 
+                          ((count / raffleMetrics.total_raffles) * 100) : 0;
+                        return (
+                          <tr key={category} className="hover:bg-slate-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                              <div className="flex items-center">
+                                <span className="inline-block w-3 h-3 rounded-full bg-indigo-300 mr-2"></span>
+                                {category || 'Uncategorized'}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                              <span className="font-semibold">{count}</span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                                {percentage.toFixed(1)}%
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                              <div className="flex items-center">
+                                <div className="w-full bg-slate-200 rounded-full h-2 mr-2">
+                                  <div 
+                                    className="bg-indigo-500 h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${Math.min(percentage, 100)}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-xs text-slate-500 w-12 text-right">
+                                  {percentage.toFixed(0)}%
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

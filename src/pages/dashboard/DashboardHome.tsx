@@ -285,7 +285,7 @@ export const DashboardHome = () => {
                   <div className="flex space-x-3">
                     <Link
                       to="/dashboard/analytics"
-                      className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg transition-colors border border-white border-opacity-20"
+                      className="bg-white bg-opacity-20 hover:bg-opacity-30 text-blue-700 px-4 py-2 rounded-lg transition-colors border border-white border-opacity-20"
                     >
                       Analytics
                     </Link>

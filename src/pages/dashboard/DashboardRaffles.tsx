@@ -59,6 +59,26 @@ export function Raffles() {
     target: "",
   });
 
+  // Add quantity management functions
+  const handleQuantityChange = (value: string) => {
+    const numValue = parseInt(value);
+    if (!isNaN(numValue) && numValue >= 1 && numValue <= 100) {
+      setTicketQuantity(numValue);
+    }
+  };
+
+  const incrementQuantity = () => {
+    if (ticketQuantity < 100) {
+      setTicketQuantity(ticketQuantity + 1);
+    }
+  };
+
+  const decrementQuantity = () => {
+    if (ticketQuantity > 1) {
+      setTicketQuantity(ticketQuantity - 1);
+    }
+  };
+
   const calculateTimeLeft = (endDate: string) => {
     const now = new Date().getTime();
     const end = new Date(endDate).getTime();
@@ -713,17 +733,37 @@ export function Raffles() {
                   <label htmlFor="ticket-quantity" className="block text-lg font-medium text-slate-600 mb-3">
                     Number of Tickets
                   </label>
-                  <select
-                    id="ticket-quantity"
-                    value={ticketQuantity}
-                    onChange={(e) => setTicketQuantity(parseInt(e.target.value))}
-                    className="w-full px-4 py-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg"
-                    disabled={purchasing}
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                      <option key={num} value={num}>{num} Ticket{num > 1 ? 's' : ''}</option>
-                    ))}
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={decrementQuantity}
+                      disabled={purchasing || ticketQuantity <= 1}
+                      className="flex items-center justify-center w-12 h-12 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-lg font-bold text-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      −
+                    </button>
+                    <input
+                      id="ticket-quantity"
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={ticketQuantity}
+                      onChange={(e) => handleQuantityChange(e.target.value)}
+                      className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg text-center font-medium"
+                      disabled={purchasing}
+                    />
+                    <button
+                      type="button"
+                      onClick={incrementQuantity}
+                      disabled={purchasing || ticketQuantity >= 100}
+                      className="flex items-center justify-center w-12 h-12 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-lg font-bold text-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <p className="text-sm text-slate-500 mt-2">
+                    {ticketQuantity} ticket{ticketQuantity !== 1 ? 's' : ''} selected (max 100)
+                  </p>
                 </div>
 
                 <div className="flex justify-between items-center p-6 bg-indigo-50 rounded-lg">

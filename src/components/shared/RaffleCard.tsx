@@ -149,15 +149,21 @@ const RaffleCard: FC<RaffleCardProps> = ({ raffle, onViewDetails, onEnter, onSha
                                 <span className="hidden sm:inline">Tickets Sold</span>
                                 <span className="sm:hidden">Tickets</span>
                             </div>
-                            <span className="font-medium">{raffle.currentTickets} / {raffle.totalTickets}</span>
+                            <span className="font-medium">{raffle.currentTickets || 0} / {raffle.totalTickets || 0}</span>
                         </div>
                         <div className="w-full bg-slate-200 rounded-full h-1.5 sm:h-2 mb-2">
-                            <div className="bg-emerald-500 h-1.5 sm:h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                            <div className="bg-emerald-500 h-1.5 sm:h-2 rounded-full transition-all duration-300" style={{ width: `${Math.min(progress, 100)}%` }}></div>
                         </div>
-                        <div className="flex justify-between items-center text-xs sm:text-sm">
+                        <div className="flex justify-between items-center text-xs sm:text-sm mb-2">
                             <span className="hidden sm:inline">Price per ticket</span>
                             <span className="sm:hidden">Price</span>
-                            <span className="text-emerald-600 font-bold">${raffle.ticketPrice?.toFixed(2)}</span>
+                            <span className="text-emerald-600 font-bold">${raffle.ticketPrice?.toFixed(2) || '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs sm:text-sm">
+                            <span className="text-slate-600">Total Raised</span>
+                            <span className="text-emerald-600 font-semibold">
+                                ${((raffle.currentTickets || 0) * (raffle.ticketPrice || 0)).toFixed(2)}
+                            </span>
                         </div>
                     </>
                 )}
@@ -171,15 +177,22 @@ const RaffleCard: FC<RaffleCardProps> = ({ raffle, onViewDetails, onEnter, onSha
                                 <span className="sm:hidden">Goal</span>
                             </div>
                             <span className="font-medium">
-                                <span className="hidden sm:inline">${raffle.currentAmount?.toLocaleString()} / ${raffle.target?.toLocaleString()}</span>
-                                <span className="sm:hidden">${raffle.currentAmount?.toLocaleString()}</span>
+                                <span className="hidden sm:inline">${(raffle.currentAmount || 0).toLocaleString()} / ${(raffle.target || 0).toLocaleString()}</span>
+                                <span className="sm:hidden">${(raffle.currentAmount || 0).toLocaleString()}</span>
                             </span>
                         </div>
                         <div className="w-full bg-slate-200 rounded-full h-1.5 sm:h-2 mb-2">
-                            <div className="bg-rose-500 h-1.5 sm:h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                            <div className="bg-rose-500 h-1.5 sm:h-2 rounded-full transition-all duration-300" style={{ width: `${Math.min(progress, 100)}%` }}></div>
                         </div>
-                        <div className="sm:hidden text-xs text-slate-500 text-center">
-                            Target: ${raffle.target?.toLocaleString()}
+                        <div className="flex justify-between items-center text-xs sm:text-sm mb-2">
+                            <span className="text-slate-600">Target Goal</span>
+                            <span className="text-rose-600 font-semibold">${(raffle.target || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs sm:text-sm">
+                            <span className="text-slate-600">Progress</span>
+                            <span className="text-rose-600 font-semibold">
+                                {Math.min(progress, 100).toFixed(1)}% Complete
+                            </span>
                         </div>
                     </>
                 )}

@@ -43,7 +43,14 @@ interface AnalyticsData {
     transactions: number;
     revenue: number;
   }>;
-  payment_methods: Record<string, number>;
+  payment_methods: Record<string, { 
+    count: number; 
+    revenue: number; 
+    successful_count: number; 
+    failed_count: number; 
+    avg_amount: number; 
+    success_rate: number; 
+  }>;
   hourly_trends: Record<string, number>;
 }
 
@@ -316,22 +323,31 @@ const Analytics = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
-                  {analytics?.transaction_trends?.map((trend, index) => (
-                    <tr key={index} className="hover:bg-slate-50">
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                        {new Date(trend.date).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                        {trend.transactions}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                        ${typeof trend.revenue === 'number' ? trend.revenue.toFixed(2) : Number(trend.revenue || 0).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                        ${trend.transactions > 0 ? (Number(trend.revenue || 0) / trend.transactions).toFixed(2) : '0.00'}
-                      </td>
-                    </tr>
-                  ))}
+                  {analytics?.transaction_trends?.map((trend, index) => {
+                    // Add safety checks for trend data
+                    const safeTrend = {
+                      date: trend?.date || '',
+                      transactions: trend?.transactions || 0,
+                      revenue: Number(trend?.revenue || 0)
+                    };
+                    
+                    return (
+                      <tr key={index} className="hover:bg-slate-50">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                          {safeTrend.date ? new Date(safeTrend.date).toLocaleDateString() : 'N/A'}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                          {safeTrend.transactions}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                          ${safeTrend.revenue.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                          ${safeTrend.transactions > 0 ? (safeTrend.revenue / safeTrend.transactions).toFixed(2) : '0.00'}
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {(!analytics?.transaction_trends || analytics.transaction_trends.length === 0) && (
                     <tr>
                       <td colSpan={4} className="px-4 py-8 text-center text-slate-500">
@@ -348,15 +364,41 @@ const Analytics = () => {
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
             <h2 className="text-xl font-semibold text-slate-800 mb-4">Payment Methods</h2>
             <div className="space-y-4">
-              {Object.entries(analytics?.payment_methods || {}).map(([method, count]) => (
-                <div key={method} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <CreditCard className="h-5 w-5 text-slate-600" />
-                    <span className="text-sm font-medium text-slate-700 capitalize">{method}</span>
+              {Object.entries(analytics?.payment_methods || {}).map(([method, data]) => {
+                // Add safety checks for data properties
+                const safeData = {
+                  count: data?.count || 0,
+                  revenue: Number(data?.revenue || 0),
+                  successful_count: data?.successful_count || 0,
+                  failed_count: data?.failed_count || 0,
+                  avg_amount: Number(data?.avg_amount || 0),
+                  success_rate: Number(data?.success_rate || 0)
+                };
+                
+                return (
+                  <div key={method} className="p-4 bg-slate-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <CreditCard className="h-5 w-5 text-slate-600" />
+                        <span className="text-sm font-medium text-slate-700 capitalize">{method}</span>
+                      </div>
+                      <span className="text-sm font-bold text-slate-900">{safeData.count}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                      <div className="flex justify-between">
+                        <span>Revenue:</span>
+                        <span className="font-medium">${safeData.revenue.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Success Rate:</span>
+                        <span className={`font-medium ${safeData.success_rate >= 90 ? 'text-green-600' : safeData.success_rate >= 75 ? 'text-yellow-600' : 'text-red-600'}`}>
+                          {safeData.success_rate.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-sm font-bold text-slate-900">{count}</span>
-                </div>
-              ))}
+                );
+              })}
               {(!analytics?.payment_methods || Object.keys(analytics.payment_methods).length === 0) && (
                 <div className="text-center py-8 text-slate-500">
                   No payment method data available
@@ -380,31 +422,42 @@ const Analytics = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
-                  {transactions.map((transaction) => (
-                    <tr key={transaction.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                        #{String(transaction.id).slice(-8)}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                        ${typeof transaction.amount === 'number' ? transaction.amount.toFixed(2) : Number(transaction.amount || 0).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          transaction.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          transaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {transaction.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900 capitalize">
-                        {transaction.payment_method || 'N/A'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
-                        {new Date(transaction.created_at).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
+                  {transactions.map((transaction) => {
+                    // Add safety checks for transaction data
+                    const safeTransaction = {
+                      id: transaction?.id || 'N/A',
+                      amount: Number(transaction?.amount || 0),
+                      status: transaction?.status || 'unknown',
+                      payment_method: transaction?.payment_method || 'N/A',
+                      created_at: transaction?.created_at || ''
+                    };
+                    
+                    return (
+                      <tr key={safeTransaction.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                          #{String(safeTransaction.id).slice(-8)}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                          ${safeTransaction.amount.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            safeTransaction.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            safeTransaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {safeTransaction.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900 capitalize">
+                          {safeTransaction.payment_method}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                          {safeTransaction.created_at ? new Date(safeTransaction.created_at).toLocaleDateString() : 'N/A'}
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {transactions.length === 0 && (
                     <tr>
                       <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
