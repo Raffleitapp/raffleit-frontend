@@ -231,7 +231,7 @@ const PublicRaffles = () => {
       // Set payment success details for the alert
       setPaymentSuccessDetails({
         amount: amount || (selectedRaffle ? (selectedRaffle.ticketPrice || 0) * ticketQuantity : 0),
-        paymentMethod: method,
+        paymentMethod: method === 'unknown' ? 'PayPal' : method,
         transactionId: paymentId,
         raffleTitle: raffleTitle,
         ticketQuantity: selectedRaffle?.type === 'raffle' ? quantity || ticketQuantity : undefined,

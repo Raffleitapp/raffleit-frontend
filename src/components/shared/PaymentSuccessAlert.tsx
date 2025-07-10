@@ -76,7 +76,7 @@ const PaymentSuccessAlert: React.FC<PaymentSuccessAlertProps> = ({
                   <div className="flex items-center space-x-1">
                     <DollarSign className="h-4 w-4 text-green-600" />
                     <span className="text-lg font-bold text-green-800">
-                      ${paymentDetails.amount.toFixed(2)}
+                      ${(paymentDetails.amount || 0).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -86,7 +86,7 @@ const PaymentSuccessAlert: React.FC<PaymentSuccessAlertProps> = ({
                   <div className="flex items-center space-x-1">
                     <CreditCard className="h-4 w-4 text-green-600" />
                     <span className="text-sm font-semibold text-green-800 capitalize">
-                      {paymentDetails.paymentMethod}
+                      {paymentDetails.paymentMethod || 'PayPal'}
                     </span>
                   </div>
                 </div>

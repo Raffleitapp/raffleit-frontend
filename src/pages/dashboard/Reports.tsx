@@ -127,23 +127,15 @@ const Reports = () => {
     else setLoading(true);
     
     try {
-      const [paymentsRes, methodsRes, usersRes, rafflesRes] = await Promise.all([
+      const [paymentsRes, usersRes, rafflesRes] = await Promise.all([
         apiClient.get(`/admin/analytics/payments?period=${period}`),
-        apiClient.get(`/admin/analytics/payment-methods?period=${period}`),
         apiClient.get(`/admin/analytics/users?period=${period}`),
         apiClient.get(`/admin/analytics/raffles?period=${period}`)
       ]);
 
-      setReportData({
-        ...paymentsRes.data.data,
-        payment_methods: methodsRes.data.data?.reduce((acc: any, method: any) => {
-          acc[method.method] = {
-            count: method.count,
-            revenue: method.revenue
-          };
-          return acc;
-        }, {}) || {}
-      });
+      // Use the payment_methods data from the main payments analytics
+      // which has the correct structure expected by the frontend
+      setReportData(paymentsRes.data.data);
 
       // Use real user metrics from API instead of estimations
       setUserMetrics(usersRes.data.data);
