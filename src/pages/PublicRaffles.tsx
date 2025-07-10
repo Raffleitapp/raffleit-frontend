@@ -7,6 +7,7 @@ import RaffleCard, { Raffle as RaffleCardData } from '../components/shared/Raffl
 import RaffleDetailsModal from '../components/shared/RaffleDetailsModal';
 import PaymentOptions from '../components/shared/PaymentOptions';
 import PaymentProcessingModal from '../components/shared/PaymentProcessingModal';
+import PaymentSuccessAlert from '../components/shared/PaymentSuccessAlert';
 // PaymentStatusService removed - no longer using payment status polling
 
 // Simple local type for payment status
@@ -37,6 +38,16 @@ const PublicRaffles = () => {
   const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<'all' | 'raffle' | 'fundraising'>('all');
   // const [isInstantPayment, setIsInstantPayment] = useState(false);
+
+  // New state for payment success details
+  const [paymentSuccessDetails, setPaymentSuccessDetails] = useState<{
+    amount: number;
+    paymentMethod: string;
+    transactionId: string;
+    raffleTitle?: string;
+    ticketQuantity?: number;
+  } | null>(null);
+  const [showPaymentSuccessAlert, setShowPaymentSuccessAlert] = useState(false);
 
   useEffect(() => {
     const fetchRaffles = async () => {
@@ -208,15 +219,27 @@ const PublicRaffles = () => {
     const paymentCancelled = searchParams.get('payment_cancelled');
     const paymentId = searchParams.get('payment_id');
     const instant = searchParams.get('instant');
-    const processingSpeed = searchParams.get('processing_speed');
     const error = searchParams.get('error');
 
     if (paymentSuccess === 'true' && paymentId) {
+      // Extract payment details from URL parameters
+      const amount = parseFloat(searchParams.get('amount') || '0');
+      const method = searchParams.get('method') || 'unknown';
+      const raffleTitle = searchParams.get('raffle_title') || selectedRaffle?.title;
+      const quantity = parseInt(searchParams.get('quantity') || '1');
+
+      // Set payment success details for the alert
+      setPaymentSuccessDetails({
+        amount: amount || (selectedRaffle ? (selectedRaffle.ticketPrice || 0) * ticketQuantity : 0),
+        paymentMethod: method,
+        transactionId: paymentId,
+        raffleTitle: raffleTitle,
+        ticketQuantity: selectedRaffle?.type === 'raffle' ? quantity || ticketQuantity : undefined,
+      });
+
       if (instant === 'true') {
-        // For instant payments, show immediate success with processing speed
-        const speed = processingSpeed ? parseInt(processingSpeed) : 0;
-        const speedText = speed > 0 ? ` (processed in ${speed} seconds)` : '';
-        setPurchaseSuccess(`🎉 Payment completed instantly! Thank you for your purchase.${speedText}`);
+        // For instant payments, show immediate success
+        setShowPaymentSuccessAlert(true);
         setPurchaseError(null);
         
         // Clear any pending payment modal
@@ -253,7 +276,6 @@ const PublicRaffles = () => {
       newSearchParams.delete('payment_cancelled');
       newSearchParams.delete('payment_id');
       newSearchParams.delete('instant');
-      newSearchParams.delete('processing_speed');
       newSearchParams.delete('error');
       setSearchParams(newSearchParams, { replace: true });
     }
@@ -454,11 +476,26 @@ const PublicRaffles = () => {
 
   // Handle payment completion
   const handlePaymentComplete = (status: PaymentStatusResponse) => {
+    // Set payment success details for the alert
+    if (selectedRaffle && currentPaymentId) {
+      setPaymentSuccessDetails({
+        amount: selectedRaffle.type === 'fundraising' 
+          ? parseFloat(donationAmount) 
+          : (selectedRaffle.ticketPrice || 0) * ticketQuantity,
+        paymentMethod: 'paypal', // Default since this is likely from PayPal flow
+        transactionId: currentPaymentId,
+        raffleTitle: selectedRaffle.title,
+        ticketQuantity: selectedRaffle.type === 'raffle' ? ticketQuantity : undefined,
+      });
+      setShowPaymentSuccessAlert(true);
+    }
+    
     setPurchaseSuccess(status.message);
     setPurchaseError(null);
     setShowRaffleModal(false);
     setShowPaymentModal(false);
     setPurchasing(false);
+    setCurrentPaymentId(null);
   };
 
   // Handle payment failure
@@ -794,6 +831,18 @@ const PublicRaffles = () => {
         onPaymentComplete={handlePaymentComplete}
         onPaymentFailed={handlePaymentFailed}
       />
+
+             {/* Payment Success Alert */}
+       <PaymentSuccessAlert
+         isVisible={showPaymentSuccessAlert}
+         onClose={() => {
+           setShowPaymentSuccessAlert(false);
+           setPaymentSuccessDetails(null);
+           setPurchaseSuccess(null);
+           setShowPaymentModal(false);
+         }}
+         paymentDetails={paymentSuccessDetails}
+       />
     </>
   );
 };

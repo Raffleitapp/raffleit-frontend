@@ -21,9 +21,16 @@ import {
   Activity,
   Trophy,
   BarChart3,
-  CheckCircle
+  CheckCircle,
+  ChevronDown,
+  FileSpreadsheet,
+  File,
+  FileText
 } from 'lucide-react';
 import apiClient from '../../utils/apiClient';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 // Register Chart.js components
 ChartJS.register(
@@ -52,16 +59,44 @@ interface ReportData {
 
 interface UserMetrics {
   total_users: number;
+  new_users: number;
   active_users: number;
   new_users_today: number;
   user_growth_rate: number;
+  user_retention_rate: number;
+  users_by_role: Record<string, number>;
+  top_users_by_spending: Array<{
+    user_id: number;
+    name: string;
+    email: string;
+    total_spent: number;
+    total_transactions: number;
+  }>;
 }
 
 interface RaffleMetrics {
   total_raffles: number;
   active_raffles: number;
   completed_raffles: number;
+  new_raffles: number;
   avg_participation: number;
+  completion_rate: number;
+  total_tickets_sold: number;
+  raffles_by_category: Record<string, number>;
+  top_raffles_by_revenue: Array<{
+    raffle_id: number;
+    title: string;
+    ticket_price: number;
+    tickets_sold: number;
+    total_revenue: number;
+    total_transactions: number;
+  }>;
+  raffle_performance: {
+    total_created: number;
+    fully_sold: number;
+    average_fill_rate: number;
+    average_duration: number;
+  };
 }
 
 const Reports = () => {
@@ -74,6 +109,7 @@ const Reports = () => {
   const [period, setPeriod] = useState('30d');
   const [activeTab, setActiveTab] = useState('financial');
   const [refreshing, setRefreshing] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   // Error boundary-like error handling
   const [hasRenderError, setHasRenderError] = useState(false);
@@ -124,8 +160,244 @@ const Reports = () => {
     }
   }, [user, period]);
 
-  // Export function
-  const exportReport = () => {
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showExportDropdown && !(event.target as Element).closest('.export-dropdown')) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportDropdown]);
+
+  // Export functions
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const currentDate = new Date().toLocaleDateString();
+    const reportTitle = `RaffleIt Reports - ${period} (${currentDate})`;
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.text(reportTitle, 20, 20);
+    
+    let yPosition = 40;
+    
+    // Financial Summary
+    doc.setFontSize(14);
+    doc.text('Financial Summary', 20, yPosition);
+    yPosition += 10;
+    
+    if (reportData) {
+      const financialData = [
+        ['Total Revenue', `$${reportData.total_revenue?.toFixed(2) || 0}`],
+        ['Total Transactions', reportData.total_transactions?.toString() || '0'],
+        ['Average Transaction Value', `$${reportData.avg_transaction_value?.toFixed(2) || 0}`],
+        ['Success Rate', `${reportData.success_rate?.toFixed(1) || 0}%`],
+        ['Pending Transactions', reportData.pending_transactions?.toString() || '0'],
+        ['Failed Transactions', reportData.failed_transactions?.toString() || '0']
+      ];
+      
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Metric', 'Value']],
+        body: financialData,
+        theme: 'grid',
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [71, 85, 105] }
+      });
+      
+      yPosition = (doc as any).lastAutoTable.finalY + 20;
+    }
+    
+    // User Metrics
+    doc.setFontSize(14);
+    doc.text('User Metrics', 20, yPosition);
+    yPosition += 10;
+    
+    if (userMetrics) {
+      const userData = [
+        ['Total Users', userMetrics.total_users?.toString() || '0'],
+        ['New Users', userMetrics.new_users?.toString() || '0'],
+        ['Active Users', userMetrics.active_users?.toString() || '0'],
+        ['New Users Today', userMetrics.new_users_today?.toString() || '0'],
+        ['User Growth Rate', `${userMetrics.user_growth_rate?.toFixed(1) || 0}%`],
+        ['User Retention Rate', `${userMetrics.user_retention_rate?.toFixed(1) || 0}%`]
+      ];
+      
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Metric', 'Value']],
+        body: userData,
+        theme: 'grid',
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [71, 85, 105] }
+      });
+      
+      yPosition = (doc as any).lastAutoTable.finalY + 20;
+    }
+    
+    // Raffle Metrics
+    doc.setFontSize(14);
+    doc.text('Raffle Metrics', 20, yPosition);
+    yPosition += 10;
+    
+    if (raffleMetrics) {
+      const raffleData = [
+        ['Total Raffles', raffleMetrics.total_raffles?.toString() || '0'],
+        ['Active Raffles', raffleMetrics.active_raffles?.toString() || '0'],
+        ['Completed Raffles', raffleMetrics.completed_raffles?.toString() || '0'],
+        ['New Raffles', raffleMetrics.new_raffles?.toString() || '0'],
+        ['Average Participation', raffleMetrics.avg_participation?.toFixed(1) || '0'],
+        ['Completion Rate', `${raffleMetrics.completion_rate?.toFixed(1) || 0}%`],
+        ['Total Tickets Sold', raffleMetrics.total_tickets_sold?.toString() || '0']
+      ];
+      
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Metric', 'Value']],
+        body: raffleData,
+        theme: 'grid',
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [71, 85, 105] }
+      });
+    }
+    
+    // Save the PDF
+    doc.save(`reports-${period}-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const exportToExcel = () => {
+    const workbook = XLSX.utils.book_new();
+    
+    // Financial Summary Sheet
+    if (reportData) {
+      const financialData = [
+        ['Metric', 'Value'],
+        ['Total Revenue', reportData.total_revenue || 0],
+        ['Total Transactions', reportData.total_transactions || 0],
+        ['Average Transaction Value', reportData.avg_transaction_value || 0],
+        ['Success Rate (%)', reportData.success_rate || 0],
+        ['Pending Transactions', reportData.pending_transactions || 0],
+        ['Failed Transactions', reportData.failed_transactions || 0]
+      ];
+      
+      // Add payment methods data
+      if (reportData.payment_methods && Object.keys(reportData.payment_methods).length > 0) {
+        financialData.push(['', '']);
+        financialData.push(['Payment Methods', '']);
+        financialData.push(['Method', 'Count', 'Revenue']);
+        Object.entries(reportData.payment_methods).forEach(([method, data]) => {
+          financialData.push([method, data.count, data.revenue]);
+        });
+      }
+      
+      // Add transaction trends
+      if (reportData.transaction_trends && reportData.transaction_trends.length > 0) {
+        financialData.push(['', '']);
+        financialData.push(['Transaction Trends', '']);
+        financialData.push(['Date', 'Transactions', 'Revenue']);
+        reportData.transaction_trends.forEach(trend => {
+          financialData.push([trend.date, trend.transactions, trend.revenue]);
+        });
+      }
+      
+      const financialSheet = XLSX.utils.aoa_to_sheet(financialData);
+      XLSX.utils.book_append_sheet(workbook, financialSheet, 'Financial Summary');
+    }
+    
+    // User Metrics Sheet
+    if (userMetrics) {
+      const userData = [
+        ['Metric', 'Value'],
+        ['Total Users', userMetrics.total_users || 0],
+        ['New Users', userMetrics.new_users || 0],
+        ['Active Users', userMetrics.active_users || 0],
+        ['New Users Today', userMetrics.new_users_today || 0],
+        ['User Growth Rate (%)', userMetrics.user_growth_rate || 0],
+        ['User Retention Rate (%)', userMetrics.user_retention_rate || 0]
+      ];
+      
+      // Add users by role
+      if (userMetrics.users_by_role && Object.keys(userMetrics.users_by_role).length > 0) {
+        userData.push(['', '']);
+        userData.push(['Users by Role', '']);
+        userData.push(['Role', 'Count']);
+        Object.entries(userMetrics.users_by_role).forEach(([role, count]) => {
+          userData.push([role, count]);
+        });
+      }
+      
+      // Add top users by spending
+      if (userMetrics.top_users_by_spending && userMetrics.top_users_by_spending.length > 0) {
+        userData.push(['', '']);
+        userData.push(['Top Users by Spending', '']);
+        userData.push(['Name', 'Email', 'Total Spent', 'Total Transactions']);
+        userMetrics.top_users_by_spending.forEach(user => {
+          userData.push([user.name, user.email, user.total_spent, user.total_transactions]);
+        });
+      }
+      
+      const userSheet = XLSX.utils.aoa_to_sheet(userData);
+      XLSX.utils.book_append_sheet(workbook, userSheet, 'User Metrics');
+    }
+    
+    // Raffle Metrics Sheet
+    if (raffleMetrics) {
+      const raffleData = [
+        ['Metric', 'Value'],
+        ['Total Raffles', raffleMetrics.total_raffles || 0],
+        ['Active Raffles', raffleMetrics.active_raffles || 0],
+        ['Completed Raffles', raffleMetrics.completed_raffles || 0],
+        ['New Raffles', raffleMetrics.new_raffles || 0],
+        ['Average Participation', raffleMetrics.avg_participation || 0],
+        ['Completion Rate (%)', raffleMetrics.completion_rate || 0],
+        ['Total Tickets Sold', raffleMetrics.total_tickets_sold || 0]
+      ];
+      
+      // Add raffles by category
+      if (raffleMetrics.raffles_by_category && Object.keys(raffleMetrics.raffles_by_category).length > 0) {
+        raffleData.push(['', '']);
+        raffleData.push(['Raffles by Category', '']);
+        raffleData.push(['Category', 'Count']);
+        Object.entries(raffleMetrics.raffles_by_category).forEach(([category, count]) => {
+          raffleData.push([category, count]);
+        });
+      }
+      
+      // Add top raffles by revenue
+      if (raffleMetrics.top_raffles_by_revenue && raffleMetrics.top_raffles_by_revenue.length > 0) {
+        raffleData.push(['', '']);
+        raffleData.push(['Top Raffles by Revenue', '']);
+        raffleData.push(['Title', 'Ticket Price', 'Tickets Sold', 'Total Revenue', 'Total Transactions']);
+        raffleMetrics.top_raffles_by_revenue.forEach(raffle => {
+          raffleData.push([raffle.title, raffle.ticket_price, raffle.tickets_sold, raffle.total_revenue, raffle.total_transactions]);
+        });
+      }
+      
+      // Add raffle performance
+      if (raffleMetrics.raffle_performance) {
+        raffleData.push(['', '']);
+        raffleData.push(['Raffle Performance', '']);
+        raffleData.push(['Metric', 'Value']);
+        raffleData.push(['Total Created', raffleMetrics.raffle_performance.total_created || 0]);
+        raffleData.push(['Fully Sold', raffleMetrics.raffle_performance.fully_sold || 0]);
+        raffleData.push(['Average Fill Rate (%)', raffleMetrics.raffle_performance.average_fill_rate || 0]);
+        raffleData.push(['Average Duration (days)', raffleMetrics.raffle_performance.average_duration || 0]);
+      }
+      
+      const raffleSheet = XLSX.utils.aoa_to_sheet(raffleData);
+      XLSX.utils.book_append_sheet(workbook, raffleSheet, 'Raffle Metrics');
+    }
+    
+    // Save the Excel file
+    XLSX.writeFile(workbook, `reports-${period}-${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const exportToJSON = () => {
     const data = {
       financial: reportData,
       users: userMetrics,
@@ -270,13 +542,53 @@ const Reports = () => {
                 <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
               </button>
-              <button
-                onClick={exportReport}
-                className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors flex items-center space-x-2"
-              >
-                <Download className="h-4 w-4" />
-                <span>Export</span>
-              </button>
+              <div className="relative export-dropdown">
+                <button
+                  onClick={() => setShowExportDropdown(!showExportDropdown)}
+                  className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors flex items-center space-x-2"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Export</span>
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+                
+                {showExportDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-slate-200 z-10 export-dropdown">
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          exportToPDF();
+                          setShowExportDropdown(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
+                      >
+                        <File className="h-4 w-4" />
+                        <span>Export as PDF</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          exportToExcel();
+                          setShowExportDropdown(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
+                      >
+                        <FileSpreadsheet className="h-4 w-4" />
+                        <span>Export as Excel</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          exportToJSON();
+                          setShowExportDropdown(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
+                      >
+                        <FileText className="h-4 w-4" />
+                        <span>Export as JSON</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -538,16 +850,72 @@ const Reports = () => {
                     <span className="font-semibold text-slate-900">{userMetrics?.user_growth_rate?.toFixed(1) || '0.0'}%</span>
                   </div>
                   <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
-                    <span className="text-slate-700">Activity Rate</span>
-                    <span className="font-semibold text-slate-900">
-                      {userMetrics?.total_users && userMetrics.total_users > 0 ? ((userMetrics.active_users / userMetrics.total_users) * 100).toFixed(1) : '0.0'}%
-                    </span>
+                    <span className="text-slate-700">User Retention Rate</span>
+                    <span className="font-semibold text-slate-900">{userMetrics?.user_retention_rate?.toFixed(1) || '0.0'}%</span>
                   </div>
                   <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
-                    <span className="text-slate-700">Avg Daily New Users</span>
-                    <span className="font-semibold text-slate-900">{Math.floor((userMetrics?.new_users_today || 0) * 1.5)}</span>
+                    <span className="text-slate-700">New Users in Period</span>
+                    <span className="font-semibold text-slate-900">{userMetrics?.new_users || 0}</span>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Top Users by Spending */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+              <h2 className="text-xl font-semibold text-slate-800 mb-4">Top Users by Spending</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full table-auto">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">User</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total Spent</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Transactions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Avg per Transaction</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-200">
+                    {userMetrics?.top_users_by_spending?.map((user, index) => (
+                      <tr key={user.user_id} className="hover:bg-slate-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                          #{index + 1} {user.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                          {user.email}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                          ${Number(user.total_spent).toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                          {user.total_transactions}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                          ${(Number(user.total_spent) / user.total_transactions).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Users by Role */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+              <h2 className="text-xl font-semibold text-slate-800 mb-4">Users by Role</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {Object.entries(userMetrics?.users_by_role || {}).map(([role, count]) => (
+                  <div key={role} className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg shadow-sm border border-slate-200 p-6">
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-slate-700 capitalize">{role}</p>
+                      <p className="text-2xl font-bold text-slate-800">{count}</p>
+                      <p className="text-xs text-slate-500">
+                        {userMetrics?.total_users && userMetrics.total_users > 0 ? 
+                          ((count / userMetrics.total_users) * 100).toFixed(1) : '0.0'}%
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -597,9 +965,9 @@ const Reports = () => {
               <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg shadow-sm border border-orange-200 p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-orange-700">Avg Participation</p>
+                    <p className="text-sm font-medium text-orange-700">Fill Rate</p>
                     <p className="text-2xl font-bold text-orange-800">
-                      {raffleMetrics?.avg_participation?.toFixed(0) || '0'}
+                      {raffleMetrics?.raffle_performance?.average_fill_rate?.toFixed(1) || '0.0'}%
                     </p>
                   </div>
                   <Target className="h-8 w-8 text-orange-600" />
@@ -607,60 +975,93 @@ const Reports = () => {
               </div>
             </div>
 
-            {/* Raffle Performance Table */}
+            {/* Top Raffles by Revenue */}
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <h2 className="text-xl font-semibold text-slate-800 mb-4">Raffle Performance Metrics</h2>
+              <h2 className="text-xl font-semibold text-slate-800 mb-4">Top Raffles by Revenue</h2>
               <div className="overflow-x-auto">
                 <table className="min-w-full table-auto">
                   <thead>
                     <tr className="bg-slate-50">
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Metric</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Value</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Percentage</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Raffle</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Ticket Price</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tickets Sold</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total Revenue</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Transactions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-slate-200">
-                    <tr className="hover:bg-slate-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">Total Raffles Created</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{raffleMetrics?.total_raffles || 0}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">100%</td>
-                    </tr>
-                    <tr className="hover:bg-slate-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">Active Raffles</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{raffleMetrics?.active_raffles || 0}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                        {raffleMetrics?.total_raffles && raffleMetrics.total_raffles > 0 ? ((raffleMetrics.active_raffles / raffleMetrics.total_raffles) * 100).toFixed(1) : '0.0'}%
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-slate-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">Completed Raffles</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{raffleMetrics?.completed_raffles || 0}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                        {raffleMetrics?.total_raffles && raffleMetrics.total_raffles > 0 ? ((raffleMetrics.completed_raffles / raffleMetrics.total_raffles) * 100).toFixed(1) : '0.0'}%
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-slate-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">Average Participation</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{raffleMetrics?.avg_participation?.toFixed(0) || '0'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                        {(raffleMetrics?.avg_participation || 0) > 50 ? 'High' : (raffleMetrics?.avg_participation || 0) > 20 ? 'Medium' : 'Low'}
-                      </td>
-                    </tr>
+                    {raffleMetrics?.top_raffles_by_revenue?.map((raffle, index) => (
+                      <tr key={raffle.raffle_id} className="hover:bg-slate-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                          #{index + 1} {raffle.title}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                          ${Number(raffle.ticket_price).toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                          {raffle.tickets_sold}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                          ${Number(raffle.total_revenue).toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                          {raffle.total_transactions}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
             </div>
 
-            {/* Raffle Trends */}
+            {/* Raffle Performance Details */}
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <h2 className="text-xl font-semibold text-slate-800 mb-4">Raffle Creation Trends</h2>
-              <div className="space-y-4">
-                {reportData?.transaction_trends?.map((trend, index) => (
-                  <div key={index} className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
-                    <span className="text-slate-700">{new Date(trend.date).toLocaleDateString()}</span>
-                    <div className="flex items-center space-x-4">
-                      <span className="text-sm text-slate-600">Est. Raffles Created: {Math.floor(trend.transactions * 0.3)}</span>
-                      <span className="text-sm text-slate-600">Participation: {trend.transactions}</span>
+              <h2 className="text-xl font-semibold text-slate-800 mb-4">Raffle Performance Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                    <span className="text-slate-700">Total Tickets Sold</span>
+                    <span className="font-semibold text-slate-900">{raffleMetrics?.total_tickets_sold || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                    <span className="text-slate-700">Average Fill Rate</span>
+                    <span className="font-semibold text-slate-900">{raffleMetrics?.raffle_performance?.average_fill_rate?.toFixed(1) || '0.0'}%</span>
+                  </div>
+                  <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                    <span className="text-slate-700">Completion Rate</span>
+                    <span className="font-semibold text-slate-900">{raffleMetrics?.completion_rate?.toFixed(1) || '0.0'}%</span>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                    <span className="text-slate-700">New Raffles in Period</span>
+                    <span className="font-semibold text-slate-900">{raffleMetrics?.new_raffles || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                    <span className="text-slate-700">Fully Sold Raffles</span>
+                    <span className="font-semibold text-slate-900">{raffleMetrics?.raffle_performance?.fully_sold || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
+                    <span className="text-slate-700">Average Duration (Days)</span>
+                    <span className="font-semibold text-slate-900">{raffleMetrics?.raffle_performance?.average_duration?.toFixed(1) || '0.0'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Raffles by Category */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+              <h2 className="text-xl font-semibold text-slate-800 mb-4">Raffles by Category</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Object.entries(raffleMetrics?.raffles_by_category || {}).map(([category, count]) => (
+                  <div key={category} className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg shadow-sm border border-slate-200 p-6">
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-slate-700">{category || 'Uncategorized'}</p>
+                      <p className="text-2xl font-bold text-slate-800">{count}</p>
+                      <p className="text-xs text-slate-500">
+                        {raffleMetrics?.total_raffles && raffleMetrics.total_raffles > 0 ? 
+                          ((count / raffleMetrics.total_raffles) * 100).toFixed(1) : '0.0'}%
+                      </p>
                     </div>
                   </div>
                 ))}
