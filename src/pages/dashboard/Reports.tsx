@@ -326,15 +326,27 @@ const Reports = () => {
       doc.line(20, yPosition, 190, yPosition);
       yPosition += 15;
       
-      const paymentData = Object.entries(reportData.payment_methods).map(([method, data]) => [
-        method,
-        data.count?.toString() || '0',
-        data.successful_count?.toString() || '0',
-        data.failed_count?.toString() || '0',
-        `${(data.success_rate || 0).toFixed(1)}%`,
-        `$${(data.revenue || 0).toFixed(2)}`,
-        `$${(data.avg_amount || 0).toFixed(2)}`
-      ]);
+      const paymentData = Object.entries(reportData.payment_methods).map(([method, data]) => {
+        // Add safety checks for payment method data
+        const safeData = {
+          count: data?.count || 0,
+          revenue: Number(data?.revenue || 0),
+          successful_count: data?.successful_count || 0,
+          failed_count: data?.failed_count || 0,
+          avg_amount: Number(data?.avg_amount || 0),
+          success_rate: Number(data?.success_rate || 0)
+        };
+        
+        return [
+          method,
+          safeData.count.toString(),
+          safeData.successful_count.toString(),
+          safeData.failed_count.toString(),
+          `${safeData.success_rate.toFixed(1)}%`,
+          `$${safeData.revenue.toFixed(2)}`,
+          `$${safeData.avg_amount.toFixed(2)}`
+        ];
+      });
       
       autoTable(doc, {
         startY: yPosition,
@@ -857,40 +869,52 @@ const Reports = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-slate-200">
-                    {Object.entries(reportData?.payment_methods || {}).map(([method, data]) => (
-                      <tr key={method} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 capitalize">
-                          <div className="flex items-center">
-                            <span className="inline-block w-3 h-3 rounded-full bg-slate-300 mr-2"></span>
-                            {method}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                          {data.count || 0}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
-                          {data.successful_count || 0}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-                          {data.failed_count || 0}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            (data.success_rate || 0) >= 90 ? 'bg-green-100 text-green-800' :
-                            (data.success_rate || 0) >= 75 ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {(data.success_rate || 0).toFixed(1)}%
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                          ${(data.revenue || 0).toFixed(2)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                          ${(data.avg_amount || 0).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
+                    {Object.entries(reportData?.payment_methods || {}).map(([method, data]) => {
+                      // Add safety checks for payment method data
+                      const safeData = {
+                        count: data?.count || 0,
+                        revenue: Number(data?.revenue || 0),
+                        successful_count: data?.successful_count || 0,
+                        failed_count: data?.failed_count || 0,
+                        avg_amount: Number(data?.avg_amount || 0),
+                        success_rate: Number(data?.success_rate || 0)
+                      };
+                      
+                      return (
+                        <tr key={method} className="hover:bg-slate-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 capitalize">
+                            <div className="flex items-center">
+                              <span className="inline-block w-3 h-3 rounded-full bg-slate-300 mr-2"></span>
+                              {method}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            {safeData.count}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
+                            {safeData.successful_count}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
+                            {safeData.failed_count}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              safeData.success_rate >= 90 ? 'bg-green-100 text-green-800' :
+                              safeData.success_rate >= 75 ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {safeData.success_rate.toFixed(1)}%
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            ${safeData.revenue.toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                            ${safeData.avg_amount.toFixed(2)}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
