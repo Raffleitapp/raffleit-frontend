@@ -142,7 +142,7 @@ const PaymentSuccessAlert: React.FC<PaymentSuccessAlertProps> = ({
 
       {/* Backdrop */}
       <div 
-        className={`fixed inset-0 bg-black transition-opacity duration-300 ${
+        className={`fixed inset-0 backdrop-blur-sm transition-opacity transition-opacity duration-300 ${
           show ? 'opacity-30' : 'opacity-0'
         }`}
         onClick={() => {

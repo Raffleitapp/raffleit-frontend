@@ -178,7 +178,7 @@
 
 /* Responsive overlay utilities */
 .responsive-overlay {
-  @apply bg-black bg-opacity-50 sm:bg-opacity-60 lg:bg-opacity-70;
+  @apply backdrop-blur-sm transition-opacity bg-opacity-50 sm:bg-opacity-60 lg:bg-opacity-70;
 }
 
 /* Responsive backdrop blur */
