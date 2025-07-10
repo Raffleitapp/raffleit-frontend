@@ -3,10 +3,72 @@ import { ChevronRight } from 'lucide-react';
 import { Hero } from '../components/main/Hero';
 import { Started } from '../components/main/Started';
 import { Testimonials } from '../components/main/Testimonials';
+import { useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 export const Home = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationType, setNotificationType] = useState<'success' | 'error' | 'warning'>('success');
+
+  useEffect(() => {
+    const paymentSuccess = searchParams.get('payment_success');
+    const paymentFailed = searchParams.get('payment_failed');
+    const paymentCancelled = searchParams.get('payment_cancelled');
+    // const paymentId = searchParams.get('payment_id');
+
+    if (paymentSuccess === 'true') {
+      setNotificationMessage('Payment completed successfully! Thank you for your purchase.');
+      setNotificationType('success');
+      setShowNotification(true);
+    } else if (paymentFailed === 'true') {
+      setNotificationMessage('Payment failed. Please try again or contact support.');
+      setNotificationType('error');
+      setShowNotification(true);
+    } else if (paymentCancelled === 'true') {
+      setNotificationMessage('Payment was cancelled. You can try again anytime.');
+      setNotificationType('warning');
+      setShowNotification(true);
+    }
+
+    // Clear URL parameters after showing notification
+    if (paymentSuccess || paymentFailed || paymentCancelled) {
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('payment_success');
+      newSearchParams.delete('payment_failed');
+      newSearchParams.delete('payment_cancelled');
+      newSearchParams.delete('payment_id');
+      setSearchParams(newSearchParams, { replace: true });
+      
+      // Hide notification after 5 seconds
+      setTimeout(() => {
+        setShowNotification(false);
+      }, 5000);
+    }
+  }, [searchParams, setSearchParams]);
+
   return (
     <>
+      {/* Payment Notification */}
+      {showNotification && (
+        <div className={`fixed top-4 right-4 z-50 max-w-md px-4 py-3 rounded-lg shadow-lg ${
+          notificationType === 'success' ? 'bg-green-500 text-white' :
+          notificationType === 'error' ? 'bg-red-500 text-white' :
+          'bg-yellow-500 text-black'
+        }`}>
+          <div className="flex items-center justify-between">
+            <span className="font-medium">{notificationMessage}</span>
+            <button
+              onClick={() => setShowNotification(false)}
+              className="ml-4 text-lg font-bold hover:opacity-75"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       <Hero
         backgroundImage='./images/home-bg.png'
         title='Raffle From Anywhere Around The World'
