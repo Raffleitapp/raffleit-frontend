@@ -46,6 +46,7 @@ const Navbar = () => {
     });
     const [creating, setCreating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [orgName, setOrgName] = useState("");
     const [orgCoverImage, setOrgCoverImage] = useState<File | null>(null);
     const [orgCategoryId, setOrgCategoryId] = useState<string>("");
@@ -72,8 +73,7 @@ const Navbar = () => {
     const [hostType, setHostType] = useState<"personal" | "organisation" | null>(null);
 
     const navigate = useNavigate();
-    const isAuthenticated = !!localStorage.getItem('token');
-    const { user } = useAuth(); // user: { first_name, last_name, ... }
+    const { user, isAuthenticated } = useAuth(); // Get both user and isAuthenticated from context
 
     const menuItems = [
         { label: "Home", href: "/" },
@@ -90,49 +90,53 @@ const Navbar = () => {
     const handleCreateRaffle = async () => {
         setCreating(true);
         setError(null);
+        setSuccess(null);
         
+        // Check authentication first
+        const token = localStorage.getItem('token');
+        if (!token) {
+            setError('You must be logged in to create a raffle');
+            setCreating(false);
+            return;
+        }
+
+        if (!isAuthenticated || !user) {
+            setError('Authentication required. Please log in again.');
+            setCreating(false);
+            return;
+        }
+
         // Validation
         if (!newRaffle.title.trim()) {
-            setError("Title is required");
+            setError('Title is required');
             setCreating(false);
             return;
         }
         if (!newRaffle.host_name.trim()) {
-            setError("Host name is required");
+            setError('Host name is required');
             setCreating(false);
             return;
         }
         if (!newRaffle.category_id) {
-            setError("Please select a category");
+            setError('Please select a category');
             setCreating(false);
             return;
         }
         if (!newRaffle.ending_date) {
-            setError("End date is required");
+            setError('End date is required');
             setCreating(false);
             return;
         }
-        if (newRaffle.type === "raffle") {
+        if (newRaffle.type === 'raffle') {
             if (!newRaffle.ticket_price || parseFloat(newRaffle.ticket_price) <= 0) {
-                setError("Valid ticket price is required for raffles");
-                setCreating(false);
-                return;
-            }
-            if (!newRaffle.max_tickets || parseInt(newRaffle.max_tickets) <= 0) {
-                setError("Valid maximum tickets is required for raffles");
+                setError('Valid ticket price is required for raffles');
                 setCreating(false);
                 return;
             }
         }
-        
+
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                setError("You must be logged in to create a raffle");
-                setCreating(false);
-                return;
-            }
-            
+            // Create FormData for file uploads
             const formData = new FormData();
             formData.append("title", newRaffle.title);
             formData.append("host_name", newRaffle.host_name);
@@ -142,78 +146,150 @@ const Navbar = () => {
             formData.append("target", newRaffle.target);
             formData.append("category_id", newRaffle.category_id);
             formData.append("type", newRaffle.type);
-            if (newRaffle.type === "raffle") {
+            if (newRaffle.type === 'raffle') {
                 formData.append("ticket_price", newRaffle.ticket_price);
                 formData.append("max_tickets", newRaffle.max_tickets);
             }
             if (newRaffle.organisation_id) formData.append("organisation_id", newRaffle.organisation_id);
             if (newRaffle.fundraising_id) formData.append("fundraising_id", newRaffle.fundraising_id);
             if (newRaffle.state_raffle_hosted) formData.append("state_raffle_hosted", newRaffle.state_raffle_hosted);
-            // Support up to 4 images
+            
+            // Explicitly add user_id to FormData (backend should also set this)
+            if (user?.user_id) {
+                formData.append("user_id", user.user_id.toString());
+            }
+            
+            // Validation: Ensure consistent organization tracking
+            if (hostType === 'personal' && newRaffle.organisation_id) {
+                console.warn('Warning: Personal raffle should not have organisation_id');
+            }
+            if (hostType === 'organisation' && !newRaffle.organisation_id) {
+                setError('Please select an organisation for organisation raffles');
+                setCreating(false);
+                return;
+            }
+            
+            // Add images if they exist
             if (newRaffle.image1) formData.append("image1", newRaffle.image1);
             if (newRaffle.image2) formData.append("image2", newRaffle.image2);
             if (newRaffle.image3) formData.append("image3", newRaffle.image3);
             if (newRaffle.image4) formData.append("image4", newRaffle.image4);
 
-            console.log('API_BASE_URL:', API_BASE_URL);
-            console.log('Sending request to:', `${API_BASE_URL}/raffles`);
-            console.log('FormData entries:');
+            // Debug: Log what's being sent
+            console.log('FormData being sent to API:');
+            console.log('Host Type:', hostType);
+            console.log('Current User ID:', user?.user_id);
+            console.log('Organisation ID from form:', newRaffle.organisation_id);
             for (const [key, value] of formData.entries()) {
-                console.log(`${key}: ${value}`);
+                console.log(`${key}:`, value instanceof File ? `File: ${value.name} (${value.size} bytes)` : value);
             }
 
             const res = await fetch(`${API_BASE_URL}/raffles`, {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${token}`,
+                    "Accept": "application/json",
                 },
                 body: formData,
             });
 
-            console.log('Response status:', res.status);
-            console.log('Response URL:', res.url);
-            console.log('Response headers:', res.headers);
-
-            if (!res.ok) {
-                const errText = await res.text();
-                console.error('Error response:', errText);
-                throw new Error(errText || `Failed to create raffle (${res.status})`);
+            if (res.ok) {
+                const responseData = await res.json();
+                console.log('Raffle created successfully:', responseData);
+                console.log('Created raffle user_id:', responseData.user_id);
+                console.log('Current authenticated user ID:', user?.user_id);
+                // Reset modal and form
+                setShowCreateModal(false);
+                setNewRaffle({
+                    title: '',
+                    host_name: '',
+                    description: '',
+                    starting_date: '',
+                    ending_date: '',
+                    target: '',
+                    category_id: '',
+                    organisation_id: '',
+                    fundraising_id: '',
+                    state_raffle_hosted: '',
+                    type: 'raffle',
+                    ticket_price: '',
+                    max_tickets: '',
+                    image1: null,
+                    image2: null,
+                    image3: null,
+                    image4: null,
+                });
+                setSuccess('Raffle created successfully!');
+                setError(null);
+                // Optionally refresh raffles or redirect
+            } else if (res.status === 401) {
+                // Authentication failed
+                setError('Authentication failed. Please log in again.');
+                // Clear auth data and redirect to login
+                localStorage.removeItem('token');
+                localStorage.removeItem('user_data');
+                localStorage.removeItem('role');
+                window.location.href = '/login';
+            } else if (res.status === 422) {
+                // Validation errors
+                try {
+                    const errorData = await res.json();
+                    if (errorData.errors) {
+                        const errorMessages = Object.values(errorData.errors).flat();
+                        setError(errorMessages.join(', '));
+                    } else {
+                        setError(errorData.message || 'Validation failed');
+                    }
+                } catch (parseError) {
+                    setError('Validation failed. Please check your inputs.');
+                }
+            } else {
+                const errorData = await res.text();
+                try {
+                    const parsedError = JSON.parse(errorData);
+                    setError(parsedError.message || 'Failed to create raffle');
+                } catch (parseError) {
+                    setError(`Failed to create raffle (${res.status}): ${errorData}`);
+                }
             }
-
-            const responseData = await res.json();
-            console.log('Success response:', responseData);
-
-            setShowCreateModal(false);
-            setNewRaffle({
-                title: "",
-                host_name: "",
-                description: "",
-                starting_date: "",
-                ending_date: "",
-                target: "",
-                category_id: "",
-                organisation_id: "",
-                fundraising_id: "",
-                state_raffle_hosted: "",
-                type: "raffle",
-                ticket_price: "",
-                max_tickets: "",
-                image1: null,
-                image2: null,
-                image3: null,
-                image4: null,
-            });
-        } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Failed to create raffle.");
+        } catch (error) {
+            if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+                setError('Network error. Please check your connection and try again.');
+            } else {
+                setError('An error occurred while creating the raffle: ' + (error instanceof Error ? error.message : String(error)));
+            }
         } finally {
             setCreating(false);
         }
     };
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, imageNumber: 1 | 2 | 3 | 4) => {
         if (e.target.files && e.target.files[0]) {
-            setNewRaffle({ ...newRaffle, image1: e.target.files[0] });
+            const file = e.target.files[0];
+            
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/svg+xml'];
+            if (!allowedTypes.includes(file.type)) {
+                setError('Please select a valid image file (JPEG, PNG, JPG, GIF, SVG)');
+                return;
+            }
+            
+            // Validate file size (4MB = 4 * 1024 * 1024 bytes)
+            const maxSize = 4 * 1024 * 1024;
+            if (file.size > maxSize) {
+                setError('Image file size must be less than 4MB');
+                return;
+            }
+            
+            const imageKey = `image${imageNumber}` as keyof typeof newRaffle;
+            setNewRaffle({ ...newRaffle, [imageKey]: file });
+            setError(null); // Clear any previous error
         }
+    };
+
+    const removeImage = (imageNumber: 1 | 2 | 3 | 4) => {
+        const imageKey = `image${imageNumber}` as keyof typeof newRaffle;
+        setNewRaffle({ ...newRaffle, [imageKey]: null });
     };
 
     const handleCreateOrganisation = async () => {
@@ -419,17 +495,17 @@ const Navbar = () => {
 
             {/* Create Raffle Modal */}
             {showCreateModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
                     {/* Modal Overlay */}
                     <div
-                        className="absolute inset-0 backdrop-blur-sm transition-opacity"
+                        className="absolute inset-0 backdrop-blur-sm backdrop-blur-sm transition-opacity bg-opacity-50 transition-opacity"
                         onClick={() => setShowCreateModal(false)}
                         aria-label="Close modal"
                     />
                     {/* Modal Content */}
                     <div
-                        className="relative bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg border border-gray-200 z-10 animate-fade-in"
-                        onClick={e => e.stopPropagation()}
+                        className="relative bg-white p-6 md:p-8 rounded-lg shadow-2xl w-full max-w-2xl border border-gray-200 z-10 max-h-[95vh] overflow-y-auto my-4"
+                        onClick={(e) => e.stopPropagation()}
                         role="dialog"
                         aria-modal="true"
                     >
@@ -445,7 +521,7 @@ const Navbar = () => {
                                             setStep(2);
                                             setNewRaffle(r => ({
                                                 ...r,
-                                                organisation_id: "",
+                                                organisation_id: '',
                                                 host_name: user ? `${user.first_name} ${user.last_name}` : "",
                                             }));
                                         }}
@@ -505,18 +581,103 @@ const Navbar = () => {
                                 </div>
                                 {/* Organisation Creation Popup */}
                                 {showOrgModal && (
-                                    <div className="fixed inset-0 z-50 flex items-center justify-center">
+                                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+                                        {/* Modal Overlay */}
                                         <div
-                                            className="absolute inset-0 backdrop-blur-sm transition-opacity"
+                                            className="absolute inset-0 backdrop-blur-sm backdrop-blur-sm transition-opacity bg-opacity-50 transition-opacity"
                                             onClick={() => setShowOrgModal(false)}
+                                            aria-label="Close modal"
                                         />
+                                        {/* Modal Content */}
                                         <div
-                                            className="relative bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg border border-gray-200 z-10 animate-fade-in"
-                                            onClick={e => e.stopPropagation()}
+                                            className="relative bg-white p-6 md:p-8 rounded-lg shadow-2xl w-full max-w-2xl border border-gray-200 z-10 max-h-[95vh] overflow-y-auto my-4"
+                                            onClick={(e) => e.stopPropagation()}
                                             role="dialog"
                                             aria-modal="true"
                                         >
-                                            {/* ...organisation creation form... */}
+                                            <h2 className="text-2xl font-bold mb-6 text-gray-900 text-center">Create Organisation</h2>
+                                            {orgError && <div className="text-red-600 mb-4 text-center">{orgError}</div>}
+                                            <form
+                                                className="flex flex-col gap-3"
+                                                onSubmit={e => { e.preventDefault(); handleCreateOrganisation(); }}
+                                            >
+                                                <input
+                                                    className="w-full p-2 border rounded-lg text-black"
+                                                    placeholder="Organisation Name"
+                                                    value={orgName}
+                                                    onChange={e => setOrgName(e.target.value)}
+                                                    required
+                                                />
+                                                <label className="block">
+                                                    <span className="text-gray-700 text-sm">Cover Image (optional)</span>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="w-full mt-1 p-2 border rounded-lg text-black"
+                                                        onChange={e => setOrgCoverImage(e.target.files?.[0] || null)}
+                                                    />
+                                                </label>
+                                                <select
+                                                    className="w-full p-2 border rounded-lg text-black"
+                                                    value={orgCategoryId}
+                                                    onChange={e => setOrgCategoryId(e.target.value)}
+                                                >
+                                                    <option value="">Select Category (optional)</option>
+                                                    {categories.map((cat: Category) => (
+                                                        <option key={cat.id} value={cat.id}>{cat.category_name}</option>
+                                                    ))}
+                                                </select>
+                                                <input
+                                                    className="w-full p-2 border rounded-lg text-black"
+                                                    placeholder="Nick Name (optional)"
+                                                    value={orgNickName}
+                                                    onChange={e => setOrgNickName(e.target.value)}
+                                                />
+                                                <input
+                                                    className="w-full p-2 border rounded-lg text-black"
+                                                    placeholder="Handle (optional)"
+                                                    value={orgHandle}
+                                                    onChange={e => setOrgHandle(e.target.value)}
+                                                />
+                                                <input
+                                                    className="w-full p-2 border rounded-lg text-black"
+                                                    placeholder="Website (optional)"
+                                                    value={orgWebsite}
+                                                    onChange={e => setOrgWebsite(e.target.value)}
+                                                />
+                                                <textarea
+                                                    className="w-full p-2 border rounded-lg text-black resize-none"
+                                                    placeholder="Description (optional)"
+                                                    value={orgDescription}
+                                                    onChange={e => setOrgDescription(e.target.value)}
+                                                    rows={2}
+                                                />
+                                                <select
+                                                    className="w-full p-2 border rounded-lg text-black"
+                                                    value={orgStatus}
+                                                    onChange={e => setOrgStatus(e.target.value)}
+                                                >
+                                                    <option value="active">Active</option>
+                                                    <option value="inactive">Inactive</option>
+                                                </select>
+                                                <div className="flex justify-end gap-2 mt-4">
+                                                    <button
+                                                        type="button"
+                                                        className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-800 font-semibold transition"
+                                                        onClick={() => setShowOrgModal(false)}
+                                                        disabled={orgCreating}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        type="submit"
+                                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
+                                                        disabled={orgCreating}
+                                                    >
+                                                        {orgCreating ? "Creating..." : "Create"}
+                                                    </button>
+                                                </div>
+                                            </form>
                                         </div>
                                     </div>
                                 )}
@@ -528,6 +689,7 @@ const Navbar = () => {
                             <>
                                 <h2 className="text-2xl font-bold mb-6 text-gray-900 text-center">Create New Raffle</h2>
                                 {error && <div className="text-red-600 mb-4 text-center">{error}</div>}
+                                {success && <div className="text-green-600 mb-4 text-center">{success}</div>}
                                 <form
                                     className="flex flex-col gap-3"
                                     onSubmit={e => { e.preventDefault(); handleCreateRaffle(); }}
@@ -654,7 +816,34 @@ const Navbar = () => {
                                             type="file"
                                             accept="image/*"
                                             className="w-full mt-1 p-2 border rounded-lg text-black"
-                                            onChange={handleImageChange}
+                                            onChange={e => handleImageChange(e, 1)}
+                                        />
+                                    </label>
+                                    <label className="block">
+                                        <span className="text-gray-700 text-sm">Image 2 (optional)</span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="w-full mt-1 p-2 border rounded-lg text-black"
+                                            onChange={e => handleImageChange(e, 2)}
+                                        />
+                                    </label>
+                                    <label className="block">
+                                        <span className="text-gray-700 text-sm">Image 3 (optional)</span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="w-full mt-1 p-2 border rounded-lg text-black"
+                                            onChange={e => handleImageChange(e, 3)}
+                                        />
+                                    </label>
+                                    <label className="block">
+                                        <span className="text-gray-700 text-sm">Image 4 (optional)</span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="w-full mt-1 p-2 border rounded-lg text-black"
+                                            onChange={e => handleImageChange(e, 4)}
                                         />
                                     </label>
                                     <div className="flex justify-end gap-2 mt-4">
@@ -677,109 +866,6 @@ const Navbar = () => {
                                 </form>
                             </>
                         ) : null}
-                    </div>
-                </div>
-            )}
-
-            {/* Create Organisation Modal */}
-            {showOrgModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
-                    {/* Modal Overlay */}
-                    <div
-                        className="absolute inset-0 backdrop-blur-sm transition-opacity"
-                        onClick={() => setShowOrgModal(false)}
-                        aria-label="Close modal"
-                    />
-                    {/* Modal Content */}
-                    <div
-                        className="relative bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg border border-gray-200 z-10 animate-fade-in"
-                        onClick={e => e.stopPropagation()}
-                        role="dialog"
-                        aria-modal="true"
-                    >
-                        <h2 className="text-2xl font-bold mb-6 text-gray-900 text-center">Create Organisation</h2>
-                        {orgError && <div className="text-red-600 mb-4 text-center">{orgError}</div>}
-                        <form
-                            className="flex flex-col gap-3"
-                            onSubmit={e => { e.preventDefault(); handleCreateOrganisation(); }}
-                        >
-                            <input
-                                className="w-full p-2 border rounded-lg text-black"
-                                placeholder="Organisation Name"
-                                value={orgName}
-                                onChange={e => setOrgName(e.target.value)}
-                                required
-                            />
-                            <label className="block">
-                                <span className="text-gray-700 text-sm">Cover Image (optional)</span>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    className="w-full mt-1 p-2 border rounded-lg text-black"
-                                    onChange={e => setOrgCoverImage(e.target.files?.[0] || null)}
-                                />
-                            </label>
-                            <select
-                                className="w-full p-2 border rounded-lg text-black"
-                                value={orgCategoryId}
-                                onChange={e => setOrgCategoryId(e.target.value)}
-                            >
-                                <option value="">Select Category (optional)</option>
-                                {categories.map((cat: Category) => (
-                                    <option key={cat.id} value={cat.id}>{cat.category_name}</option>
-                                ))}
-                            </select>
-                            <input
-                                className="w-full p-2 border rounded-lg text-black"
-                                placeholder="Nick Name (optional)"
-                                value={orgNickName}
-                                onChange={e => setOrgNickName(e.target.value)}
-                            />
-                            <input
-                                className="w-full p-2 border rounded-lg text-black"
-                                placeholder="Handle (optional)"
-                                value={orgHandle}
-                                onChange={e => setOrgHandle(e.target.value)}
-                            />
-                            <input
-                                className="w-full p-2 border rounded-lg text-black"
-                                placeholder="Website (optional)"
-                                value={orgWebsite}
-                                onChange={e => setOrgWebsite(e.target.value)}
-                            />
-                            <textarea
-                                className="w-full p-2 border rounded-lg text-black resize-none"
-                                placeholder="Description (optional)"
-                                value={orgDescription}
-                                onChange={e => setOrgDescription(e.target.value)}
-                                rows={2}
-                            />
-                            <select
-                                className="w-full p-2 border rounded-lg text-black"
-                                value={orgStatus}
-                                onChange={e => setOrgStatus(e.target.value)}
-                            >
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
-                            <div className="flex justify-end gap-2 mt-4">
-                                <button
-                                    type="button"
-                                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-800 font-semibold transition"
-                                    onClick={() => setShowOrgModal(false)}
-                                    disabled={orgCreating}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
-                                    disabled={orgCreating}
-                                >
-                                    {orgCreating ? "Creating..." : "Create"}
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
             )}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../constants/constants';
 import { useAuth } from '../../context/authUtils';
-import { Ticket, Users, Calendar, Trophy, Clock, DollarSign } from 'lucide-react';
+import { Ticket, Users, Trophy, Clock } from 'lucide-react';
 
 interface TicketData {
   id: number;

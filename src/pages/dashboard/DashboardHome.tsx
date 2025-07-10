@@ -3,12 +3,48 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '../../constants/constants';
 import { Activity, BarChart3, FileText, Plus, Ticket, Users, TrendingUp, Calendar, Gift, Trophy, Clock, DollarSign } from 'lucide-react';
+import { RaffleAnalyticsComponent } from '../../components/dashboard/RaffleAnalytics';
+import ErrorBoundary from '../../components/shared/ErrorBoundary';
 
 interface RaffleStats {
   myActiveRaffles: number;
   ticketsPurchased: number;
   upcomingDraws: number;
   recentActivity: string[];
+}
+
+interface RaffleAnalytics {
+  total_raffles: number;
+  active_raffles: number;
+  pending_raffles: number;
+  completed_raffles: number;
+  total_revenue: number;
+  recent_raffles: Array<{
+    id: number;
+    title: string;
+    host_name: string;
+    approve_status: string;
+    type: string;
+    tickets_sold: number;
+    current_amount: number;
+    target?: number;
+    ticket_price?: number;
+    ending_date: string;
+    created_at: string;
+    category_name: string;
+  }>;
+  top_performing_raffles: Array<{
+    id: number;
+    title: string;
+    host_name: string;
+    type: string;
+    tickets_sold: number;
+    current_amount: number;
+    target?: number;
+    ticket_price?: number;
+    ending_date: string;
+    category_name: string;
+  }>;
 }
 
 interface TicketAnalytics {
@@ -66,7 +102,7 @@ interface Organisation {
 }
 
 export const DashboardHome = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [stats, setStats] = useState<RaffleStats>({
     myActiveRaffles: 0,
     ticketsPurchased: 0,
@@ -88,12 +124,19 @@ export const DashboardHome = () => {
     target: '',
     category_id: '',
     organisation_id: '',
+    fundraising_id: '',
+    state_raffle_hosted: '',
     type: 'raffle' as 'raffle' | 'fundraising',
     ticket_price: '',
     max_tickets: '',
+    image1: null as File | null,
+    image2: null as File | null,
+    image3: null as File | null,
+    image4: null as File | null,
   });
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [organisations, setOrganisations] = useState<Organisation[]>([]);
   const [step, setStep] = useState<1 | 2>(1);
@@ -257,6 +300,21 @@ export const DashboardHome = () => {
   const handleCreateRaffle = async () => {
     setCreating(true);
     setError(null);
+    setSuccess(null);
+    
+    // Check authentication first
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('You must be logged in to create a raffle');
+      setCreating(false);
+      return;
+    }
+
+    if (!isAuthenticated || !user) {
+      setError('Authentication required. Please log in again.');
+      setCreating(false);
+      return;
+    }
     
     // Validation
     if (!newRaffle.title.trim()) {
@@ -288,31 +346,110 @@ export const DashboardHome = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      // Use FormData for file uploads
+      const formData = new FormData();
+      formData.append('title', newRaffle.title);
+      formData.append('host_name', newRaffle.host_name);
+      formData.append('description', newRaffle.description);
+      formData.append('starting_date', newRaffle.starting_date);
+      formData.append('ending_date', newRaffle.ending_date);
+      formData.append('target', newRaffle.target);
+      formData.append('category_id', newRaffle.category_id);
+      formData.append('type', newRaffle.type);
+      
+      if (newRaffle.type === 'raffle') {
+        formData.append('ticket_price', newRaffle.ticket_price);
+        if (newRaffle.max_tickets) formData.append('max_tickets', newRaffle.max_tickets);
+      }
+      
+      if (newRaffle.organisation_id) formData.append('organisation_id', newRaffle.organisation_id);
+      if (newRaffle.fundraising_id) formData.append('fundraising_id', newRaffle.fundraising_id);
+      if (newRaffle.state_raffle_hosted) formData.append('state_raffle_hosted', newRaffle.state_raffle_hosted);
+      
+      // Explicitly add user_id to FormData (backend should also set this)
+      if (user?.user_id) {
+        formData.append('user_id', user.user_id.toString());
+      }
+      
+      // Validation: Ensure consistent organization tracking
+      if (hostType === 'personal' && newRaffle.organisation_id) {
+        console.warn('Warning: Personal raffle should not have organisation_id');
+      }
+      if (hostType === 'organisation' && !newRaffle.organisation_id) {
+        setError('Please select an organisation for organisation raffles');
+        setCreating(false);
+        return;
+      }
+      
+      // Add images if they exist
+      if (newRaffle.image1) formData.append('image1', newRaffle.image1);
+      if (newRaffle.image2) formData.append('image2', newRaffle.image2);
+      if (newRaffle.image3) formData.append('image3', newRaffle.image3);
+      if (newRaffle.image4) formData.append('image4', newRaffle.image4);
+
+      // Debug: Log what's being sent
+      console.log('FormData being sent to API:');
+      console.log('Host Type:', hostType);
+      console.log('Current User ID:', user?.user_id);
+      console.log('Organisation ID from form:', newRaffle.organisation_id);
+      for (const [key, value] of formData.entries()) {
+        console.log(`${key}:`, value instanceof File ? `File: ${value.name} (${value.size} bytes)` : value);
+      }
+
       const res = await fetch(`${API_BASE_URL}/raffles`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
         },
-        body: JSON.stringify({
-          ...newRaffle,
-          target: newRaffle.target ? parseFloat(newRaffle.target) : null,
-          ticket_price: newRaffle.ticket_price ? parseFloat(newRaffle.ticket_price) : null,
-          max_tickets: newRaffle.max_tickets ? parseInt(newRaffle.max_tickets) : null,
-        }),
+        body: formData,
       });
 
       if (res.ok) {
+        const responseData = await res.json();
+        console.log('Raffle created successfully:', responseData);
+        console.log('Created raffle user_id:', responseData.user_id);
+        console.log('Current authenticated user ID:', user?.user_id);
         resetModal();
         fetchStats(); // Refresh stats after creating raffle
-        // Show success message or redirect
+        setSuccess('Raffle created successfully!');
+        setError(null);
+      } else if (res.status === 401) {
+        // Authentication failed
+        setError('Authentication failed. Please log in again.');
+        // Clear auth data and redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('user_data');
+        localStorage.removeItem('role');
+        window.location.href = '/login';
+      } else if (res.status === 422) {
+        // Validation errors
+        try {
+          const errorData = await res.json();
+          if (errorData.errors) {
+            const errorMessages = Object.values(errorData.errors).flat();
+            setError(errorMessages.join(', '));
+          } else {
+            setError(errorData.message || 'Validation failed');
+          }
+        } catch (parseError) {
+          setError('Validation failed. Please check your inputs.');
+        }
       } else {
-        const errorData = await res.json();
-        setError(errorData.message || 'Failed to create raffle');
+        const errorData = await res.text();
+        try {
+          const parsedError = JSON.parse(errorData);
+          setError(parsedError.message || 'Failed to create raffle');
+        } catch (parseError) {
+          setError(`Failed to create raffle (${res.status}): ${errorData}`);
+        }
       }
     } catch (error) {
-      setError('An error occurred while creating the raffle');
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        setError('Network error. Please check your connection and try again.');
+      } else {
+        setError('An error occurred while creating the raffle: ' + (error instanceof Error ? error.message : String(error)));
+      }
     } finally {
       setCreating(false);
     }
@@ -331,11 +468,18 @@ export const DashboardHome = () => {
       target: '',
       category_id: '',
       organisation_id: '',
+      fundraising_id: '',
+      state_raffle_hosted: '',
       type: 'raffle',
       ticket_price: '',
       max_tickets: '',
+      image1: null,
+      image2: null,
+      image3: null,
+      image4: null,
     });
     setError(null);
+    setSuccess(null);
     setCreating(false);
   };
 
@@ -349,6 +493,36 @@ export const DashboardHome = () => {
 
   const userRoleDisplay = user?.role === 'admin' ? 'Administrator' : 
                           user?.role === 'host' ? 'Host' : 'User';
+
+  // Image handling functions
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, imageNumber: 1 | 2 | 3 | 4) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/svg+xml'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Please select a valid image file (JPEG, PNG, JPG, GIF, SVG)');
+        return;
+      }
+      
+      // Validate file size (4MB = 4 * 1024 * 1024 bytes)
+      const maxSize = 4 * 1024 * 1024;
+      if (file.size > maxSize) {
+        setError('Image file size must be less than 4MB');
+        return;
+      }
+      
+      const imageKey = `image${imageNumber}` as keyof typeof newRaffle;
+      setNewRaffle({ ...newRaffle, [imageKey]: file });
+      setError(null); // Clear any previous error
+    }
+  };
+
+  const removeImage = (imageNumber: 1 | 2 | 3 | 4) => {
+    const imageKey = `image${imageNumber}` as keyof typeof newRaffle;
+    setNewRaffle({ ...newRaffle, [imageKey]: null });
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -565,6 +739,11 @@ export const DashboardHome = () => {
           </div>
         )}
 
+        {/* Admin Raffle Analytics */}
+        <ErrorBoundary>
+          <RaffleAnalyticsComponent userRole={user?.role || ''} />
+        </ErrorBoundary>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Quick Actions */}
           <div className="lg:col-span-1">
@@ -675,16 +854,16 @@ export const DashboardHome = () => {
 
       {/* Create Raffle Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           {/* Modal Overlay */}
           <div
-            className="absolute inset-0 backdrop-blur-sm transition-opacity bg-opacity-50 backdrop-blur-sm transition-opacity"
+            className="absolute inset-0 backdrop-blur-sm backdrop-blur-sm transition-opacity bg-opacity-50 transition-opacity"
             onClick={resetModal}
             aria-label="Close modal"
           />
           {/* Modal Content */}
           <div
-            className="relative bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg border border-gray-200 z-10 max-h-[90vh] overflow-y-auto"
+            className="relative bg-white p-6 md:p-8 rounded-lg shadow-2xl w-full max-w-2xl border border-gray-200 z-10 max-h-[95vh] overflow-y-auto my-4"
             onClick={e => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -732,6 +911,7 @@ export const DashboardHome = () => {
               <>
                 <h2 className="text-2xl font-bold mb-6 text-gray-900 text-center">Create New Raffle</h2>
                 {error && <div className="text-red-600 mb-4 text-center bg-red-50 p-3 rounded-lg">{error}</div>}
+                {success && <div className="text-green-600 mb-4 text-center bg-green-50 p-3 rounded-lg">{success}</div>}
                 
                 {/* Organisation Selection for Organisation Host */}
                 {hostType === 'organisation' && (
@@ -869,6 +1049,102 @@ export const DashboardHome = () => {
                       value={newRaffle.starting_date}
                       onChange={e => setNewRaffle({ ...newRaffle, starting_date: e.target.value })}
                     />
+                  </div>
+
+                  {/* Image Upload Section */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-gray-900">Images (Optional)</h3>
+                    <p className="text-sm text-gray-600">Upload up to 4 images for your raffle. Accepted formats: JPG, PNG, GIF, SVG (max 4MB each)</p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Image 1</label>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/jpg,image/gif,image/svg+xml"
+                          className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          onChange={(e) => handleImageChange(e, 1)}
+                        />
+                        {newRaffle.image1 && (
+                          <div className="mt-2 flex items-center justify-between bg-gray-50 p-2 rounded">
+                            <span className="text-sm text-gray-700 truncate">{newRaffle.image1.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeImage(1)}
+                              className="text-red-500 hover:text-red-700 text-sm"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Image 2</label>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/jpg,image/gif,image/svg+xml"
+                          className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          onChange={(e) => handleImageChange(e, 2)}
+                        />
+                        {newRaffle.image2 && (
+                          <div className="mt-2 flex items-center justify-between bg-gray-50 p-2 rounded">
+                            <span className="text-sm text-gray-700 truncate">{newRaffle.image2.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeImage(2)}
+                              className="text-red-500 hover:text-red-700 text-sm"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Image 3</label>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/jpg,image/gif,image/svg+xml"
+                          className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          onChange={(e) => handleImageChange(e, 3)}
+                        />
+                        {newRaffle.image3 && (
+                          <div className="mt-2 flex items-center justify-between bg-gray-50 p-2 rounded">
+                            <span className="text-sm text-gray-700 truncate">{newRaffle.image3.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeImage(3)}
+                              className="text-red-500 hover:text-red-700 text-sm"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Image 4</label>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/jpg,image/gif,image/svg+xml"
+                          className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          onChange={(e) => handleImageChange(e, 4)}
+                        />
+                        {newRaffle.image4 && (
+                          <div className="mt-2 flex items-center justify-between bg-gray-50 p-2 rounded">
+                            <span className="text-sm text-gray-700 truncate">{newRaffle.image4.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeImage(4)}
+                              className="text-red-500 hover:text-red-700 text-sm"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div>
