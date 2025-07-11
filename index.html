@@ -6,10 +6,7 @@
     <meta name="description"
       content="Funditzone - A simple raffle app that helps you raffle and have a chance to win a prize after participating in a raffle." />
     <meta name="author" content="Funditzone" />
-    <meta name="keywords" content="raffle, app, react, Winning" />
-    
-    <!-- Content Security Policy -->
-    <meta http-equiv="Content-Security-Policy" content="
+    <meta name="keywords" content="raffle, app, react, Winning" /><meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
       script-src 'self' 'unsafe-eval';
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
@@ -19,6 +16,28 @@
       frame-src 'self' https://www.paypal.com https://sandbox.paypal.com;
     ">
 
+<meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-eval';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data: https: https://api.funditzone.com;
+      connect-src 'self' https: wss: https://api.funditzone.com;
+      frame-src 'self' https://www.paypal.com https://sandbox.paypal.com;
+    ">
+
+<meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-eval';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data: https: http://localhost:8000 http://127.0.0.1:8000;
+      connect-src 'self' https: wss: http://localhost:8000 http://127.0.0.1:8000;
+      frame-src 'self' https://www.paypal.com https://sandbox.paypal.com;
+    ">
+
+
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
