@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../constants/constants';
 import { useAuth } from '../../context/authUtils';
 import { useNavigate } from 'react-router-dom';
-import { X, Eye, Ticket, DollarSign, Calendar, User as UserIcon } from 'lucide-react';
+import { X, Ticket, DollarSign, User as UserIcon } from 'lucide-react';
 
 // Define a type for a user
 interface User {

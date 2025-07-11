@@ -38,20 +38,6 @@ interface RaffleAnalytics {
   }>;
 }
 
-interface UserRaffle {
-  id: number;
-  title: string;
-  host_name: string;
-  approve_status: string;
-  type: string;
-  tickets_sold: number;
-  current_amount: number;
-  target?: number;
-  ticket_price?: number;
-  ending_date: string;
-  created_at: string;
-}
-
 interface Props {
   userRole: string;
   onRefresh?: () => void;

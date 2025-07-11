@@ -264,20 +264,18 @@ const Navbar = () => {
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, imageNumber: 1 | 2 | 3 | 4) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            
-            // Validate file type
-            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/svg+xml'];
-            if (!allowedTypes.includes(file.type)) {
-                setError('Please select a valid image file (JPEG, PNG, JPG, GIF, SVG)');
+        const file = e.target.files?.[0];
+        if (file) {
+            // Simple file size check (4MB limit)
+            if (file.size > 4 * 1024 * 1024) {
+                setError('Image must be less than 4MB');
                 return;
             }
             
-            // Validate file size (4MB = 4 * 1024 * 1024 bytes)
-            const maxSize = 4 * 1024 * 1024;
-            if (file.size > maxSize) {
-                setError('Image file size must be less than 4MB');
+            // Simple file type check
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/svg+xml'];
+            if (!allowedTypes.includes(file.type)) {
+                setError('Only JPEG, PNG, JPG, GIF, and SVG files are allowed');
                 return;
             }
             
@@ -285,11 +283,6 @@ const Navbar = () => {
             setNewRaffle({ ...newRaffle, [imageKey]: file });
             setError(null); // Clear any previous error
         }
-    };
-
-    const removeImage = (imageNumber: 1 | 2 | 3 | 4) => {
-        const imageKey = `image${imageNumber}` as keyof typeof newRaffle;
-        setNewRaffle({ ...newRaffle, [imageKey]: null });
     };
 
     const handleCreateOrganisation = async () => {

@@ -2,7 +2,7 @@ import { useAuth } from '../../context/authUtils';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '../../constants/constants';
-import { Activity, BarChart3, FileText, Plus, Ticket, Users, TrendingUp, Calendar, Gift, Trophy, Clock, DollarSign } from 'lucide-react';
+import { Activity, BarChart3, FileText, Plus, Ticket, Users, TrendingUp, Calendar, Gift, Trophy, Clock } from 'lucide-react';
 import { RaffleAnalyticsComponent } from '../../components/dashboard/RaffleAnalytics';
 import ErrorBoundary from '../../components/shared/ErrorBoundary';
 
@@ -11,40 +11,6 @@ interface RaffleStats {
   ticketsPurchased: number;
   upcomingDraws: number;
   recentActivity: string[];
-}
-
-interface RaffleAnalytics {
-  total_raffles: number;
-  active_raffles: number;
-  pending_raffles: number;
-  completed_raffles: number;
-  total_revenue: number;
-  recent_raffles: Array<{
-    id: number;
-    title: string;
-    host_name: string;
-    approve_status: string;
-    type: string;
-    tickets_sold: number;
-    current_amount: number;
-    target?: number;
-    ticket_price?: number;
-    ending_date: string;
-    created_at: string;
-    category_name: string;
-  }>;
-  top_performing_raffles: Array<{
-    id: number;
-    title: string;
-    host_name: string;
-    type: string;
-    tickets_sold: number;
-    current_amount: number;
-    target?: number;
-    ticket_price?: number;
-    ending_date: string;
-    category_name: string;
-  }>;
 }
 
 interface TicketAnalytics {
@@ -142,7 +108,6 @@ export const DashboardHome = () => {
   const [organisations, setOrganisations] = useState<Organisation[]>([]);
   const [step, setStep] = useState<1 | 2>(1);
   const [hostType, setHostType] = useState<'personal' | 'organisation' | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [organisationModalOpen, setOrganisationModalOpen] = useState(false);
   const [newOrganisation, setNewOrganisation] = useState({
     organisation_name: '',
@@ -153,9 +118,6 @@ export const DashboardHome = () => {
     category_id: '',
     status: 'active'
   });
-  const [raffleAnalytics, setRaffleAnalytics] = useState<RaffleAnalytics | null>(null);
-  const [raffleLastRefresh, setRaffleLastRefresh] = useState<Date | null>(null);
-  const [ticketLastRefresh, setTicketLastRefresh] = useState<Date | null>(null);
 
   // Auto-refresh data every 30 seconds
   useEffect(() => {
@@ -238,7 +200,7 @@ export const DashboardHome = () => {
           if (ticket.status === 'won') {
             recentActivity.push(`🏆 You won a prize with ticket ${ticket.id}!`);
           } else if (ticket.raffle?.title) {
-            recentActivity.push(`🎫 You purchased a ticket for '${ticket.raffle.title}'.`);
+            recentActivity.push(`You purchased a ticket for '${ticket.raffle.title}'.`);
           }
         });
       }
@@ -617,16 +579,6 @@ export const DashboardHome = () => {
       status: 'active'
     });
     setOrganisationModalOpen(false);
-    setError(null);
-    setSuccess(null);
-  };
-
-  // Handle Enter key in form fields
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleCreateRaffle();
-    }
   };
 
   // Handle Enter key in organisation form fields
