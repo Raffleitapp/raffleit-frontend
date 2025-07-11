@@ -4,10 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "node scripts/dev-csp.cjs && vite",
+    "build": "node scripts/clean-csp.cjs && tsc -b && vite build",
+    "build:dev": "node scripts/build-with-csp.cjs development && tsc -b && vite build",
+    "build:staging": "node scripts/build-with-csp.cjs staging && tsc -b && vite build",
+    "build:prod": "node scripts/clean-csp.cjs && tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && netlify deploy --prod",
+    "deploy:preview": "npm run build && netlify deploy",
+    "setup": "node scripts/setup-hooks.cjs"
   },
   "dependencies": {
     "@paddle/paddle-js": "^1.4.2",
