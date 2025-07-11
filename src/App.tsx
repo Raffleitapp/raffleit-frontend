@@ -13,6 +13,7 @@ import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
 import { Raffles } from './pages/Raffles';
 import PublicRaffles from './pages/PublicRaffles';
+import PaymentSuccess from './pages/PaymentSuccess';
 import { AdminDashboard } from './pages/dashboard/AdminDashboard';
 import CompletedRaffles from './pages/dashboard/CompletedRaffles';
 import LiveRaffles from './pages/dashboard/LiveRaffles';
@@ -37,6 +38,7 @@ function PublicLayout() {
     '/contact',
     '/howitworks',
     '/raffles',
+    '/payment-success',
   ];
 
   const isValidRoute =
@@ -57,6 +59,7 @@ function PublicLayout() {
         <Route path="/register" element={<Register />} />
         <Route path="/raffles" element={<PublicRaffles />} />
         <Route path="/raffles/:id" element={<PublicRaffles />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {showLayout && <Footer />}

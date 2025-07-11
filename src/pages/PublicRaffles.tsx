@@ -447,34 +447,51 @@ const PublicRaffles = () => {
           throw new Error(result.error || 'Failed to get PayPal approval URL.');
         }
       } else {
-        // Paddle payment flow
-        const endpoint = isDonation ? '/payments/paddle/donations' : '/payments/paddle/tickets';
-        const body = {
-          raffle_id: selectedRaffle.id,
-          ...(isDonation ? { amount } : { quantity: ticketQuantity }),
-          payment_method,
-        };
-
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(body),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to create Paddle checkout.');
+        // Paddle inline payment flow
+        const paddleService = (await import('../utils/paddleService')).default;
+        
+        if (!paddleService.isReady()) {
+          throw new Error('Payment system is initializing. Please wait a moment and try again.');
         }
 
-        const result = await response.json();
+        try {
+          if (isDonation) {
+            await paddleService.donateInline(selectedRaffle.id.toString(), amount);
+          } else {
+            await paddleService.purchaseTicketsInline(selectedRaffle.id.toString(), ticketQuantity);
+          }
+        } catch (paddleError) {
+          // If inline payment fails, fall back to redirect-based payment
+          console.warn('Inline payment failed, falling back to redirect:', paddleError);
+          
+          const endpoint = isDonation ? '/payments/paddle/donations' : '/payments/paddle/tickets';
+          const body = {
+            raffle_id: selectedRaffle.id,
+            ...(isDonation ? { amount } : { quantity: ticketQuantity }),
+            payment_method,
+          };
 
-        if (result.success && result.checkout_url) {
-          window.location.href = result.checkout_url;
-        } else {
-          throw new Error(result.error || 'Failed to get Paddle checkout URL.');
+          const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(body),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to create Paddle checkout.');
+          }
+
+          const result = await response.json();
+
+          if (result.success && result.checkout_url) {
+            window.location.href = result.checkout_url;
+          } else {
+            throw new Error(result.error || 'Failed to get Paddle checkout URL.');
+          }
         }
       }
 
@@ -766,6 +783,7 @@ const PublicRaffles = () => {
 
                 <PaymentOptions
                   onPayPalClick={() => handlePayment('paypal')}
+                  onPaddleClick={() => handlePayment('paddle')}
                   onCancel={closeRaffleModal}
                   disabled={!donationAmount || parseFloat(donationAmount) <= 0}
                   purchasing={purchasing}
@@ -820,6 +838,7 @@ const PublicRaffles = () => {
 
                 <PaymentOptions
                   onPayPalClick={() => handlePayment('paypal')}
+                  onPaddleClick={() => handlePayment('paddle')}
                   onCancel={closeRaffleModal}
                   disabled={false}
                   purchasing={purchasing}

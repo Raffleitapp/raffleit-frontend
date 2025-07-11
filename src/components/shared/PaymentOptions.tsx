@@ -3,7 +3,7 @@ import { CreditCard } from 'lucide-react';
 
 interface PaymentOptionsProps {
   onPayPalClick: () => void;
-  onPaddleClick?: () => void; // Make optional since it's disabled
+  onPaddleClick: () => void;
   onCancel?: () => void; // Cancel callback
   disabled?: boolean;
   purchasing?: boolean;
@@ -12,7 +12,7 @@ interface PaymentOptionsProps {
 
 const PaymentOptions: FC<PaymentOptionsProps> = ({
   onPayPalClick,
-  // onPaddleClick, // Disabled for now
+  onPaddleClick,
   onCancel,
   disabled = false,
   purchasing = false,
@@ -48,8 +48,8 @@ const PaymentOptions: FC<PaymentOptionsProps> = ({
           <span className="xs:hidden">{purchasing ? 'Processing...' : 'Pay'}</span>
         </button>
         
-        {/* Active Paddle Button - Uncomment when ready to enable */}
-        {/* <button
+        {/* Active Paddle Button */}
+        <button
           onClick={onPaddleClick}
           disabled={disabled || purchasing}
           className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base ${
@@ -59,18 +59,6 @@ const PaymentOptions: FC<PaymentOptionsProps> = ({
           <PaddleIcon />
           <span className="hidden xs:inline">{purchasing ? 'Processing...' : 'Pay with Card'}</span>
           <span className="xs:hidden">{purchasing ? 'Processing...' : 'Card'}</span>
-        </button> */}
-        
-        {/* Disabled Paddle Button - Remove when ready to enable */}
-        <button
-          disabled={true}
-          className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 bg-slate-300 text-slate-500 rounded-lg cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base ${
-            isDashboard ? 'shadow-md' : ''
-          }`}
-        >
-          <PaddleIcon />
-          <span className="hidden xs:inline">Card Payments - Coming Soon</span>
-          <span className="xs:hidden">Coming Soon</span>
         </button>
       </div>
       
