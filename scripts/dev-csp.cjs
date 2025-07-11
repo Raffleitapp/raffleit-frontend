@@ -7,9 +7,15 @@ const path = require('path');
 const indexPath = path.join(__dirname, '..', 'index.html');
 let content = fs.readFileSync(indexPath, 'utf8');
 
-// Remove any existing CSP first
+// Remove any existing CSP first (both comment and meta tag)
 content = content.replace(
-  /\s*<!-- Content Security Policy.*?-->\s*/gs,
+  /\s*<!-- Content Security Policy.*?-->\s*\n?\s*<meta\s+http-equiv=["']Content-Security-Policy["'].*?>\s*\n?\s*/gs,
+  ''
+);
+
+// Also handle case where only meta tag exists without comment
+content = content.replace(
+  /\s*<meta\s+http-equiv=["']Content-Security-Policy["'].*?>\s*\n?\s*/gs,
   ''
 );
 
