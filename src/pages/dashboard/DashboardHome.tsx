@@ -99,6 +99,7 @@ interface Category {
 interface Organisation {
   id: number;
   organisation_name: string;
+  category_id?: number;
 }
 
 export const DashboardHome = () => {
@@ -141,6 +142,20 @@ export const DashboardHome = () => {
   const [organisations, setOrganisations] = useState<Organisation[]>([]);
   const [step, setStep] = useState<1 | 2>(1);
   const [hostType, setHostType] = useState<'personal' | 'organisation' | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [organisationModalOpen, setOrganisationModalOpen] = useState(false);
+  const [newOrganisation, setNewOrganisation] = useState({
+    organisation_name: '',
+    nick_name: '',
+    handle: '',
+    website: '',
+    description: '',
+    category_id: '',
+    status: 'active'
+  });
+  const [raffleAnalytics, setRaffleAnalytics] = useState<RaffleAnalytics | null>(null);
+  const [raffleLastRefresh, setRaffleLastRefresh] = useState<Date | null>(null);
+  const [ticketLastRefresh, setTicketLastRefresh] = useState<Date | null>(null);
 
   // Auto-refresh data every 30 seconds
   useEffect(() => {
@@ -520,8 +535,126 @@ export const DashboardHome = () => {
   };
 
   const removeImage = (imageNumber: 1 | 2 | 3 | 4) => {
-    const imageKey = `image${imageNumber}` as keyof typeof newRaffle;
-    setNewRaffle({ ...newRaffle, [imageKey]: null });
+    setNewRaffle(prev => ({
+      ...prev,
+      [`image${imageNumber}`]: null
+    }));
+  };
+
+  const handleCreateOrganisation = async () => {
+    if (!newOrganisation.organisation_name.trim()) {
+      setError('Organisation name is required');
+      return;
+    }
+
+    setCreating(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('You must be logged in to create an organisation');
+        setCreating(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/organisations`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newOrganisation),
+      });
+
+      if (response.ok) {
+        const newOrg = await response.json();
+        setSuccess('Organisation created successfully!');
+        
+        // Refresh the organisations list
+        await fetchOrganisations();
+        
+        // Select the new organisation in the raffle form
+        setNewRaffle(prev => ({
+          ...prev,
+          organisation_id: newOrg.id.toString()
+        }));
+        
+        // Close the organisation modal
+        setOrganisationModalOpen(false);
+        
+        // Reset the form
+        setNewOrganisation({
+          organisation_name: '',
+          nick_name: '',
+          handle: '',
+          website: '',
+          description: '',
+          category_id: '',
+          status: 'active'
+        });
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || 'Failed to create organisation');
+      }
+    } catch (error) {
+      setError('Error creating organisation. Please try again.');
+      console.error('Error creating organisation:', error);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const resetOrganisationModal = () => {
+    setNewOrganisation({
+      organisation_name: '',
+      nick_name: '',
+      handle: '',
+      website: '',
+      description: '',
+      category_id: '',
+      status: 'active'
+    });
+    setOrganisationModalOpen(false);
+    setError(null);
+    setSuccess(null);
+  };
+
+  // Handle Enter key in form fields
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleCreateRaffle();
+    }
+  };
+
+  // Handle Enter key in organisation form fields
+  const handleOrgKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleCreateOrganisation();
+    }
+  };
+
+  // Handle organization selection and auto-fill category
+  const handleOrganisationChange = (organisationId: string) => {
+    let categoryId = '';
+    
+    if (organisationId) {
+      // Find the selected organization and get its category_id
+      const selectedOrg = organisations.find(org => org.id.toString() === organisationId);
+      if (selectedOrg) {
+        categoryId = selectedOrg.category_id?.toString() || '';
+      }
+    }
+    
+    // Update both organisation_id and category_id
+    setNewRaffle(prev => ({
+      ...prev,
+      organisation_id: organisationId,
+      category_id: categoryId
+    }));
   };
 
   return (
@@ -917,17 +1050,26 @@ export const DashboardHome = () => {
                 {hostType === 'organisation' && (
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Organisation</label>
-                    <select
-                      className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      value={newRaffle.organisation_id}
-                      onChange={e => setNewRaffle({ ...newRaffle, organisation_id: e.target.value })}
-                      required
-                    >
-                      <option value="">Select Organisation</option>
-                      {organisations.map((org) => (
-                        <option key={org.id} value={org.id}>{org.organisation_name}</option>
-                      ))}
-                    </select>
+                    <div className="flex gap-2">
+                      <select
+                        className="flex-1 p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={newRaffle.organisation_id}
+                        onChange={e => handleOrganisationChange(e.target.value)}
+                        required
+                      >
+                        <option value="">Select Organisation</option>
+                        {organisations.map((org) => (
+                          <option key={org.id} value={org.id}>{org.organisation_name}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => setOrganisationModalOpen(true)}
+                        className="px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                      >
+                        Create New
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -971,17 +1113,35 @@ export const DashboardHome = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                    <select
-                      className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      value={newRaffle.category_id}
-                      onChange={e => setNewRaffle({ ...newRaffle, category_id: e.target.value })}
-                      required
-                    >
-                      <option value="">Select Category</option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>{cat.category_name}</option>
-                      ))}
-                    </select>
+                    {hostType === 'organisation' && newRaffle.organisation_id ? (
+                      <div className="space-y-2">
+                        <select
+                          className="w-full p-3 border border-gray-300 rounded-lg text-gray-500 bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          value={newRaffle.category_id}
+                          disabled
+                        >
+                          <option value="">Select Category</option>
+                          {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>{cat.category_name}</option>
+                          ))}
+                        </select>
+                        <p className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
+                          <strong>Note:</strong> Category is automatically set based on the selected organization and cannot be changed.
+                        </p>
+                      </div>
+                    ) : (
+                      <select
+                        className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={newRaffle.category_id}
+                        onChange={e => setNewRaffle({ ...newRaffle, category_id: e.target.value })}
+                        required
+                      >
+                        <option value="">Select Category</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>{cat.category_name}</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   <div>
@@ -1026,18 +1186,26 @@ export const DashboardHome = () => {
                     </>
                   )}
 
+                  {/* Target Amount - Required for all raffle types */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Target Amount ($) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={newRaffle.type === 'raffle' ? 'Enter target amount' : 'Enter fundraising goal'}
+                      value={newRaffle.target}
+                      onChange={e => setNewRaffle({ ...newRaffle, target: e.target.value })}
+                      required
+                    />
+                  </div>
+
                   {newRaffle.type === 'fundraising' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Target Amount ($)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="1"
-                        className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Enter target amount"
-                        value={newRaffle.target}
-                        onChange={e => setNewRaffle({ ...newRaffle, target: e.target.value })}
-                      />
+                    <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+                      <strong>Note:</strong> For fundraising campaigns, the target amount represents your fundraising goal. Supporters can donate any amount towards this goal.
                     </div>
                   )}
 
@@ -1177,6 +1345,116 @@ export const DashboardHome = () => {
                 </form>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Organisation Creation Modal */}
+      {organisationModalOpen && (
+        <div className="fixed inset-0 backdrop-blur-sm transition-opacity bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[95vh] overflow-y-auto my-4">
+            <div className="p-6 md:p-8">
+              <h2 className="text-2xl font-bold mb-6 text-gray-900 text-center">Create New Organisation</h2>
+              
+              {error && <div className="text-red-600 mb-4 text-center bg-red-50 p-3 rounded-lg">{error}</div>}
+              {success && <div className="text-green-600 mb-4 text-center bg-green-50 p-3 rounded-lg">{success}</div>}
+              
+              <form 
+                className="flex flex-col gap-4"
+                onSubmit={e => { e.preventDefault(); handleCreateOrganisation(); }}
+              >
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Organisation Name *</label>
+                  <input
+                    type="text"
+                    className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter organisation name"
+                    value={newOrganisation.organisation_name}
+                    onChange={e => setNewOrganisation({ ...newOrganisation, organisation_name: e.target.value })}
+                    onKeyPress={handleOrgKeyPress}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Nick Name</label>
+                  <input
+                    type="text"
+                    className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter nick name"
+                    value={newOrganisation.nick_name}
+                    onChange={e => setNewOrganisation({ ...newOrganisation, nick_name: e.target.value })}
+                    onKeyPress={handleOrgKeyPress}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Handle</label>
+                  <input
+                    type="text"
+                    className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter unique handle"
+                    value={newOrganisation.handle}
+                    onChange={e => setNewOrganisation({ ...newOrganisation, handle: e.target.value })}
+                    onKeyPress={handleOrgKeyPress}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Website</label>
+                  <input
+                    type="url"
+                    className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter website URL"
+                    value={newOrganisation.website}
+                    onChange={e => setNewOrganisation({ ...newOrganisation, website: e.target.value })}
+                    onKeyPress={handleOrgKeyPress}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                  <select
+                    className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={newOrganisation.category_id}
+                    onChange={e => setNewOrganisation({ ...newOrganisation, category_id: e.target.value })}
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.category_name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <textarea
+                    className="w-full p-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter organisation description"
+                    value={newOrganisation.description}
+                    onChange={e => setNewOrganisation({ ...newOrganisation, description: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex gap-4 mt-6">
+                  <button
+                    type="submit"
+                    className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50"
+                    disabled={creating}
+                  >
+                    {creating ? 'Creating...' : 'Create Organisation'}
+                  </button>
+                  <button
+                    type="button"
+                    className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
+                    onClick={resetOrganisationModal}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
