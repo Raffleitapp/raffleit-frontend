@@ -31,6 +31,15 @@ interface ApiRaffle {
     id: number;
     category_name: string;
   };
+  organisation?: {
+    id: number;
+    organisation_name: string;
+    nick_name?: string;
+    handle?: string;
+    website?: string;
+    description?: string;
+    status?: string;
+  };
 }
 
 export function Raffles() {
@@ -305,6 +314,7 @@ export function Raffles() {
       prize: raffle.description,
       description: raffle.description,
       hostName: raffle.host_name,
+      organisation: raffle.organisation,
       currentTickets: raffle.calculated_tickets_sold || raffle.tickets_sold || 0,
       totalTickets: raffle.max_tickets || 0,
       endDate: raffle.ending_date,
@@ -366,6 +376,7 @@ export function Raffles() {
     share_id: raffle.share_id || `raffle-${raffle.id}`,
     title: raffle.title,
     hostName: raffle.host_name,
+    organisation: raffle.organisation,
     endDate: raffle.ending_date,
     imageUrl: raffle.image1_url || (raffle.images && raffle.images.length > 0 ? raffle.images[0].url : '/images/default-raffle.png'),
     category: raffle.category?.category_name || 'N/A',
@@ -567,7 +578,7 @@ export function Raffles() {
             {/* Close Button */}
             <button
               onClick={closeImageModal}
-              className="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-75 z-10 text-xl"
+              className="absolute top-2 right-2 text-white backdrop-blur-sm transition-opacity bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-75 z-10 text-xl"
             >
               ✕
             </button>
@@ -591,14 +602,14 @@ export function Raffles() {
                 <button
                   onClick={prevImage}
                   disabled={currentImageIndex === 0}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white bg-black bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-75 disabled:opacity-30 disabled:cursor-not-allowed text-2xl"
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white backdrop-blur-sm transition-opacity bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-75 disabled:opacity-30 disabled:cursor-not-allowed text-2xl"
                 >
                   &#8249;
                 </button>
                 <button
                   onClick={nextImage}
                   disabled={currentImageIndex === selectedRaffle.images.length - 1}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white bg-black bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-75 disabled:opacity-30 disabled:cursor-not-allowed text-2xl"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white backdrop-blur-sm transition-opacity bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-75 disabled:opacity-30 disabled:cursor-not-allowed text-2xl"
                 >
                   &#8250;
                 </button>
@@ -607,7 +618,7 @@ export function Raffles() {
 
             {/* Image Counter and Info */}
             {selectedRaffle.images && selectedRaffle.images.length > 0 && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-4 py-2 rounded-lg text-center">
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 backdrop-blur-sm transition-opacity bg-opacity-75 text-white px-4 py-2 rounded-lg text-center">
                 <div className="text-sm font-medium">{selectedRaffle.title}</div>
                 <div className="text-xs opacity-90">
                   Image {currentImageIndex + 1} of {selectedRaffle.images.length}

@@ -40,6 +40,15 @@ const CompletedRaffles = () => {
           image1_url?: string;
           images?: Array<{ id: number; path: string; url: string; }>;
           category?: { category_name?: string };
+          organisation?: {
+            id: number;
+            organisation_name: string;
+            nick_name?: string;
+            handle?: string;
+            website?: string;
+            description?: string;
+            status?: string;
+          };
         }
 
         const completed = (data as ApiRaffle[]).filter((raffle) => {
@@ -58,6 +67,7 @@ const CompletedRaffles = () => {
             prize: raffle.prize || raffle.description || 'No prize specified',
             description: raffle.description || '',
             hostName: raffle.host_name || 'Unknown Host',
+            organisation: raffle.organisation,
             target: raffle.target || 0,
             currentTickets: ticketsSold,
             totalTickets: raffle.total_tickets ?? 0,

@@ -25,6 +25,7 @@ import Users from './pages/dashboard/Users';
 import NotFound from './pages/NotFound';
 import Settings from './pages/dashboard/Settings';
 import Tickets from './pages/dashboard/Tickets';
+import AllTickets from './pages/dashboard/AllTickets';
 import { useAuth } from './context/authUtils';
 
 function PublicLayout() {
@@ -80,6 +81,7 @@ function DashboardLayoutRoutes() {
         <Route path="settings" element={<Settings />} />
         <Route path="reports" element={<Reports />} />
         <Route path="tickets" element={<Tickets />} />
+        <Route path="all-tickets" element={<AllTickets />} />
         <Route path="raffles" element={<Raffles />} />
         <Route path="raffles/:id" element={<Raffles />} />
         <Route path="raffles/:id/edit" element={<Raffles />} />
