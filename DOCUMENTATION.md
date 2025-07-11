@@ -39,9 +39,10 @@ npm run dev
 ### Daily Development
 ```bash
 npm run dev              # Starts dev server with CSP
-# Make changes, commit normally - git hooks handle CSP cleanup
+# Make changes, commit normally - git hooks handle everything automatically
 git add .
-git commit -m "Changes"  # CSP automatically cleaned before commit
+git commit -m "Changes"  # CSP cleaned for commit, restored for development
+# Continue working immediately - no manual CSP management needed!
 ```
 
 ## 🛠️ Development Setup
@@ -122,13 +123,13 @@ connect-src 'self' https: wss: https://api.funditzone.com;
 ## 🔧 Git Hooks & Pre-commit
 
 ### Problem Solved
-Prevents accidental commits of development CSP to production.
+Prevents accidental commits of development CSP to production while maintaining seamless development workflow.
 
 ### How It Works
 1. **Development**: `npm run dev` adds CSP to `index.html`
-2. **Pre-commit**: Hook automatically detects and cleans CSP
-3. **Commit**: Only clean version gets committed
-4. **Continue**: `npm run dev` adds CSP back for next development session
+2. **Pre-commit**: Hook automatically detects and cleans CSP for commit
+3. **Auto-restore**: Hook automatically restores CSP after commit
+4. **Continue**: Developer can continue working without manual intervention
 
 ### Setup
 ```bash
@@ -140,9 +141,16 @@ npm run setup
 git add .
 git commit -m "My changes"
 # Output: 🔍 Checking for CSP in index.html...
-#         🧹 Found CSP meta tags, cleaning...
-#         ✅ CSP cleaned and added to commit
+#         🧹 Found CSP meta tags, cleaning for commit...
+#         ✅ CSP cleaned for commit and restored for development
+# Result: Commit has no CSP, working copy keeps CSP for continued development
 ```
+
+### Developer Experience
+- **No manual steps required** - CSP is automatically managed
+- **Seamless workflow** - Continue development immediately after commits
+- **Zero frustration** - No need to manually add CSP back after each commit
+- **Bulletproof** - Impossible to accidentally commit development CSP
 
 ### Manual Setup (if needed)
 ```bash
