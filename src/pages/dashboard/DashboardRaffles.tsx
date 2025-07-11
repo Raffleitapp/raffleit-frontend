@@ -31,6 +31,15 @@ interface ApiRaffle {
     id: number;
     category_name: string;
   };
+  organisation?: {
+    id: number;
+    organisation_name: string;
+    nick_name?: string;
+    handle?: string;
+    website?: string;
+    description?: string;
+    status?: string;
+  };
 }
 
 export function Raffles() {
@@ -305,6 +314,7 @@ export function Raffles() {
       prize: raffle.description,
       description: raffle.description,
       hostName: raffle.host_name,
+      organisation: raffle.organisation,
       currentTickets: raffle.calculated_tickets_sold || raffle.tickets_sold || 0,
       totalTickets: raffle.max_tickets || 0,
       endDate: raffle.ending_date,
@@ -366,6 +376,7 @@ export function Raffles() {
     share_id: raffle.share_id || `raffle-${raffle.id}`,
     title: raffle.title,
     hostName: raffle.host_name,
+    organisation: raffle.organisation,
     endDate: raffle.ending_date,
     imageUrl: raffle.image1_url || (raffle.images && raffle.images.length > 0 ? raffle.images[0].url : '/images/default-raffle.png'),
     category: raffle.category?.category_name || 'N/A',

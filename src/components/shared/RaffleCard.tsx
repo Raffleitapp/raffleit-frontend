@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Clock, Tag, Target, Ticket, Users, Share2 } from 'lucide-react';
+import { Clock, Tag, Target, Ticket, Users, Share2, Building2 } from 'lucide-react';
 
 export interface Raffle {
     id: number;
@@ -8,6 +8,15 @@ export interface Raffle {
     prize?: string;
     description?: string;
     hostName: string;
+    organisation?: {
+        id: number;
+        organisation_name: string;
+        nick_name?: string;
+        handle?: string;
+        website?: string;
+        description?: string;
+        status?: string;
+    };
     currentTickets?: number;
     totalTickets?: number;
     endDate: string;
@@ -136,6 +145,12 @@ const RaffleCard: FC<RaffleCardProps> = ({ raffle, onViewDetails, onEnter, onSha
                     <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
                     <span className="truncate">{raffle.hostName}</span>
                 </div>
+                {raffle.organisation && (
+                    <div className="flex items-center text-xs sm:text-sm text-slate-500 mb-2">
+                        <Building2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                        <span className="truncate">{raffle.organisation.organisation_name}</span>
+                    </div>
+                )}
                 <div className="flex items-center text-xs sm:text-sm text-slate-500 mb-3 sm:mb-4">
                     <Tag className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
                     <span className="truncate">{raffle.category}</span>

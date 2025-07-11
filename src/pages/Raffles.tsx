@@ -24,6 +24,15 @@ interface ApiRaffle {
     id: number;
     category_name: string;
   };
+  organisation?: {
+    id: number;
+    organisation_name: string;
+    nick_name?: string;
+    handle?: string;
+    website?: string;
+    description?: string;
+    status?: string;
+  };
 }
 
 export const Raffles = () => {
@@ -175,6 +184,7 @@ export const Raffles = () => {
                   id: raffle.id,
                   title: raffle.title,
                   hostName: raffle.host_name,
+                  organisation: raffle.organisation,
                   endDate: raffle.ending_date,
                   type: raffle.type,
                   approveStatus: raffle.approve_status,

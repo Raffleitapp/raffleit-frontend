@@ -62,6 +62,15 @@ const LiveRaffles = () => {
           image1?: string;
           image1_url?: string;
           category?: { category_name?: string };
+          organisation?: {
+            id: number;
+            organisation_name: string;
+            nick_name?: string;
+            handle?: string;
+            website?: string;
+            description?: string;
+            status?: string;
+          };
           approve_status?: string;
         }
 
@@ -89,6 +98,7 @@ const LiveRaffles = () => {
             prize: raffle.prize || raffle.description || 'No prize specified',
             description: raffle.description || '',
             hostName: raffle.host_name || 'Unknown Host',
+            organisation: raffle.organisation,
             target: raffle.target || 0,
             currentTickets: ticketsSold,
             totalTickets: raffle.total_tickets ?? 0,
