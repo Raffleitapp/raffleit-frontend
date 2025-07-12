@@ -177,7 +177,7 @@ const LiveRaffles = () => {
     setPurchaseSuccess(null);
   };
 
-  const handlePayment = async (method: 'paddle' | 'paypal') => {
+  const handlePayment = async (method: 'paypal') => {
     if (!selectedRaffle || !user) {
       setPurchaseError('Please log in to proceed with payment.');
       return;
@@ -227,36 +227,6 @@ const LiveRaffles = () => {
           window.location.href = result.approval_url;
         } else {
           throw new Error(result.error || 'Failed to get PayPal approval URL.');
-        }
-        
-      } else if (method === 'paddle') {
-        // Paddle payment flow
-        const endpoint = isDonation ? '/payments/paddle/donations' : '/payments/paddle/tickets';
-        const body = {
-          raffle_id: selectedRaffle.id,
-          ...(isDonation ? { amount } : { quantity: ticketQuantity }),
-        };
-
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(body),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to create Paddle checkout.');
-        }
-
-        const result = await response.json();
-        
-        if (result.success && result.checkout_url) {
-          window.location.href = result.checkout_url;
-        } else {
-          throw new Error(result.error || 'Failed to get Paddle checkout URL.');
         }
       }
 

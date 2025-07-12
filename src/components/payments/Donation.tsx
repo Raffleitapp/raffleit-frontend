@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import paddleService from '../../utils/paddleService';
+
 
 interface DonationProps {
   raffleId: string;
@@ -9,14 +9,12 @@ interface DonationProps {
 }
 
 const Donation: React.FC<DonationProps> = ({
-  raffleId,
   raffleTitle,
-  onSuccess,
   onError,
 }) => {
   const [amount, setAmount] = useState<string>('');
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
 
   const presetAmounts = [5, 10, 25, 50, 100];
 
@@ -31,47 +29,8 @@ const Donation: React.FC<DonationProps> = ({
   };
 
   const handleDonate = async () => {
-    const donationAmount = parseFloat(amount);
-    
-    if (!donationAmount || donationAmount < 1) {
-      if (onError) {
-        onError('Please enter a valid donation amount (minimum $1.00)');
-      }
-      return;
-    }
-
-    if (donationAmount > 999999) {
-      if (onError) {
-        onError('Maximum donation amount is $999,999.99');
-      }
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      
-      const result = await paddleService.createDonationCheckout(raffleId, donationAmount);
-      
-      if (result.success && result.checkout_url) {
-        // Redirect to Paddle checkout
-        paddleService.redirectToCheckout(result.checkout_url);
-        
-        if (onSuccess && result.payment_id) {
-          onSuccess(result.payment_id);
-        }
-      } else {
-        const error = result.error || 'Failed to create donation checkout';
-        if (onError) {
-          onError(error);
-        }
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-      if (onError) {
-        onError(errorMessage);
-      }
-    } finally {
-      setIsLoading(false);
+    if (onError) {
+      onError('Donation feature is currently unavailable. Please use PayPal for payments.');
     }
   };
 
@@ -148,7 +107,7 @@ const Donation: React.FC<DonationProps> = ({
       </button>
 
       <p className="text-xs text-gray-500 mt-3 text-center">
-        You will be redirected to Paddle for secure payment processing
+        Payment processing is currently unavailable
       </p>
     </div>
   );

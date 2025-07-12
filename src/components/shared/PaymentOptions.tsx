@@ -1,9 +1,7 @@
 import { FC } from 'react';
-import { CreditCard } from 'lucide-react';
 
 interface PaymentOptionsProps {
   onPayPalClick: () => void;
-  onPaddleClick?: () => void; // Make optional since it's disabled
   onCancel?: () => void; // Cancel callback
   disabled?: boolean;
   purchasing?: boolean;
@@ -12,7 +10,6 @@ interface PaymentOptionsProps {
 
 const PaymentOptions: FC<PaymentOptionsProps> = ({
   onPayPalClick,
-  // onPaddleClick, // Disabled for now
   onCancel,
   disabled = false,
   purchasing = false,
@@ -27,10 +24,7 @@ const PaymentOptions: FC<PaymentOptionsProps> = ({
     </svg>
   );
 
-  // Paddle/Card SVG Icon
-  const PaddleIcon = () => (
-    <CreditCard className="w-6 h-6" />
-  );
+
 
   return (
     <div className="border-t pt-3 sm:pt-4">
@@ -61,17 +55,7 @@ const PaymentOptions: FC<PaymentOptionsProps> = ({
           <span className="xs:hidden">{purchasing ? 'Processing...' : 'Card'}</span>
         </button> */}
         
-        {/* Disabled Paddle Button - Remove when ready to enable */}
-        <button
-          disabled={true}
-          className={`flex-1 px-4 sm:px-6 py-3 sm:py-4 bg-slate-300 text-slate-500 rounded-lg cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base ${
-            isDashboard ? 'shadow-md' : ''
-          }`}
-        >
-          <PaddleIcon />
-          <span className="hidden xs:inline">Card Payments - Coming Soon</span>
-          <span className="xs:hidden">Coming Soon</span>
-        </button>
+
       </div>
       
       {/* Cancel Button Section */}
