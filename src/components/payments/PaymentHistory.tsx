@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import paddleService from '../../utils/paddleService';
+
 
 interface PaymentHistoryItem {
   id: string;
@@ -16,11 +16,11 @@ interface PaymentHistoryItem {
 }
 
 const PaymentHistory: React.FC = () => {
-  const [payments, setPayments] = useState<PaymentHistoryItem[]>([]);
+  const [payments] = useState<PaymentHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalPages] = useState(1);
 
   useEffect(() => {
     loadPaymentHistory();
@@ -31,15 +31,9 @@ const PaymentHistory: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const result = await paddleService.getPaymentHistory();
+      // TODO: Implement payment history with PayPal or other payment provider
+      setError('Payment history feature is currently unavailable');
       
-      if (result.success && result.payments) {
-        setPayments(result.payments.data);
-        setCurrentPage(result.payments.current_page);
-        setTotalPages(result.payments.last_page);
-      } else {
-        setError(result.error || 'Failed to load payment history');
-      }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {

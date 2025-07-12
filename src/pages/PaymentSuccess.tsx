@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import paddleService from '../utils/paddleService';
+
 
 interface Payment {
   id: string;
@@ -17,7 +17,7 @@ interface Payment {
 
 const PaymentSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const [payment, setPayment] = useState<Payment | null>(null);
+  const [payment] = useState<Payment | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,20 +26,8 @@ const PaymentSuccess: React.FC = () => {
   const loadPaymentDetails = useCallback(async () => {
     if (!paymentId) return;
 
-    try {
-      setLoading(true);
-      const result = await paddleService.getPayment(paymentId);
-      
-      if (result.success && result.payment) {
-        setPayment(result.payment);
-      } else {
-        setError(result.error || 'Failed to load payment details');
-      }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
+    setError('Payment details feature is currently unavailable');
+    setLoading(false);
   }, [paymentId]);
 
   useEffect(() => {

@@ -374,7 +374,7 @@ const PublicRaffles = () => {
   };
 
   // Enhanced payment handler with immediate feedback
-  const handlePayment = async (method: 'paddle' | 'paypal') => {
+  const handlePayment = async (method: 'paypal') => {
     if (!selectedRaffle || !user) {
       setPurchaseError('Please log in to proceed with payment.');
       return;
@@ -397,86 +397,55 @@ const PublicRaffles = () => {
       const token = localStorage.getItem('token');
       const payment_method = method;
 
-      if (method === 'paypal') {
-        // PayPal payment flow with immediate status tracking
-        const endpoint = isDonation ? '/payments/paypal/donations' : '/payments/paypal/tickets';
-        const body = {
-          raffle_id: selectedRaffle.id,
-          ...(isDonation ? { amount } : { quantity: ticketQuantity }),
-          payment_method,
-        };
+      // PayPal payment flow with immediate status tracking
+      const endpoint = isDonation ? '/payments/paypal/donations' : '/payments/paypal/tickets';
+      const body = {
+        raffle_id: selectedRaffle.id,
+        ...(isDonation ? { amount } : { quantity: ticketQuantity }),
+        payment_method,
+      };
 
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(body),
-        });
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to create PayPal payment.');
-        }
-
-        const result = await response.json();
-
-        if (result.success && result.approval_url) {
-          // Store payment ID for status tracking when user returns
-          localStorage.setItem('pendingPaymentId', result.payment_id);
-          localStorage.setItem('paymentStartTime', Date.now().toString());
-          
-          // Show processing modal immediately for instant payment feedback
-          setCurrentPaymentId(result.payment_id);
-          setShowPaymentModal(true);
-                      // setIsInstantPayment(result.instant_optimized || false);
-          
-          // Provide immediate feedback about instant payment optimization
-          if (result.instant_optimized) {
-            setPurchaseSuccess('Payment optimized for instant processing! Redirecting to PayPal...');
-          } else {
-            setPurchaseSuccess('Processing payment... Redirecting to PayPal...');
-          }
-          
-          // Small delay to show the modal, then redirect
-          setTimeout(() => {
-            window.location.href = result.approval_url;
-          }, 1500);
-        } else {
-          throw new Error(result.error || 'Failed to get PayPal approval URL.');
-        }
-      } else {
-        // Paddle payment flow
-        const endpoint = isDonation ? '/payments/paddle/donations' : '/payments/paddle/tickets';
-        const body = {
-          raffle_id: selectedRaffle.id,
-          ...(isDonation ? { amount } : { quantity: ticketQuantity }),
-          payment_method,
-        };
-
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(body),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to create Paddle checkout.');
-        }
-
-        const result = await response.json();
-
-        if (result.success && result.checkout_url) {
-          window.location.href = result.checkout_url;
-        } else {
-          throw new Error(result.error || 'Failed to get Paddle checkout URL.');
-        }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create PayPal payment.');
       }
+
+      const result = await response.json();
+
+      if (result.success && result.approval_url) {
+        // Store payment ID for status tracking when user returns
+        localStorage.setItem('pendingPaymentId', result.payment_id);
+        localStorage.setItem('paymentStartTime', Date.now().toString());
+        
+        // Show processing modal immediately for instant payment feedback
+        setCurrentPaymentId(result.payment_id);
+        setShowPaymentModal(true);
+                    // setIsInstantPayment(result.instant_optimized || false);
+        
+        // Provide immediate feedback about instant payment optimization
+        if (result.instant_optimized) {
+          setPurchaseSuccess('Payment optimized for instant processing! Redirecting to PayPal...');
+        } else {
+          setPurchaseSuccess('Processing payment... Redirecting to PayPal...');
+        }
+        
+        // Small delay to show the modal, then redirect
+        setTimeout(() => {
+          window.location.href = result.approval_url;
+        }, 1500);
+      } else {
+        throw new Error(result.error || 'Failed to get PayPal approval URL.');
+      }
+
 
     } catch (err) {
       console.error('Payment initiation error:', err);

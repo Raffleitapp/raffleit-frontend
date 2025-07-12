@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import paddleService from '../../utils/paddleService';
+
 
 interface TicketPurchaseProps {
   raffleId: string;
@@ -11,44 +11,19 @@ interface TicketPurchaseProps {
 }
 
 const TicketPurchase: React.FC<TicketPurchaseProps> = ({
-  raffleId,
   raffleTitle,
   ticketPrice,
   maxTickets = 10,
-  onSuccess,
   onError,
 }) => {
   const [quantity, setQuantity] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
 
   const totalPrice = quantity * ticketPrice;
 
   const handlePurchase = async () => {
-    try {
-      setIsLoading(true);
-      
-      const result = await paddleService.createTicketCheckout(raffleId, quantity);
-      
-      if (result.success && result.checkout_url) {
-        // Redirect to Paddle checkout
-        paddleService.redirectToCheckout(result.checkout_url);
-        
-        if (onSuccess && result.payment_id) {
-          onSuccess(result.payment_id);
-        }
-      } else {
-        const error = result.error || 'Failed to create checkout session';
-        if (onError) {
-          onError(error);
-        }
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-      if (onError) {
-        onError(errorMessage);
-      }
-    } finally {
-      setIsLoading(false);
+    if (onError) {
+      onError('Ticket purchase feature is currently unavailable. Please use PayPal for payments.');
     }
   };
 
@@ -120,7 +95,7 @@ const TicketPurchase: React.FC<TicketPurchaseProps> = ({
       </button>
 
       <p className="text-xs text-gray-500 mt-3 text-center">
-        You will be redirected to Paddle for secure payment processing
+        Payment processing is currently unavailable
       </p>
     </div>
   );
