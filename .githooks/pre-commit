@@ -1,12 +1,15 @@
 #!/bin/sh
-# Pre-commit hook to clean CSP from index.html
-# This prevents accidentally committing development CSP meta tags
+# Pre-commit hook to clean CSP from index.html for commits
+# but restore it afterwards for continued development
 
 echo "🔍 Checking for CSP in index.html..."
 
 # Check if index.html contains CSP meta tags
 if grep -q "Content-Security-Policy" index.html; then
-    echo "🧹 Found CSP meta tags in index.html, cleaning..."
+    echo "🧹 Found CSP meta tags in index.html, cleaning for commit..."
+    
+    # Save a copy of the current index.html with CSP for restoration
+    cp index.html index.html.with-csp
     
     # Clean the CSP using our script
     node scripts/clean-csp.cjs
@@ -14,7 +17,10 @@ if grep -q "Content-Security-Policy" index.html; then
     # Add the cleaned file to the commit
     git add index.html
     
-    echo "✅ CSP cleaned from index.html and added to commit"
+    # Restore the CSP version for continued development
+    mv index.html.with-csp index.html
+    
+    echo "✅ CSP cleaned for commit and restored for development"
 else
     echo "✅ No CSP found in index.html, proceeding with commit"
 fi

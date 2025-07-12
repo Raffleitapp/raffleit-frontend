@@ -78,13 +78,11 @@ npm run setup  # Configure git hooks
 ### How CSP Works in This Project
 
 **Development:**
-
 - CSP is automatically injected into `index.html` during development
 - Allows connections to `localhost:8000` and `127.0.0.1:8000`
 - Automatically removed before commits via git hooks
 
 **Production:**
-
 - CSP is handled by server headers in `netlify.toml`
 - Only allows `https://api.funditzone.com`
 - No CSP content in committed `index.html`
