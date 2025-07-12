@@ -5,6 +5,7 @@ import { useEffect, ReactNode } from 'react'; // Import ReactNode
 import { Footer } from './components/main/Footer';
 import Navbar from './components/main/Navbar';
 import { AuthProvider } from './context/AuthContext';
+import ErrorBoundary from './components/shared/ErrorBoundary';
 import { Home } from './pages/Home';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
@@ -139,11 +140,13 @@ function App() {
 
 const AppWrapper = () => {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
