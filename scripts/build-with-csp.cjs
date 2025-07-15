@@ -43,7 +43,7 @@ content = content.replace(
 const csp = `    <!-- Content Security Policy - ${config.comment} -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src 'self' 'unsafe-eval';
+      script-src 'self' 'unsafe-eval' 'unsafe-inline';
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       font-src 'self' https://fonts.gstatic.com;
       img-src ${config.imgSrc};
