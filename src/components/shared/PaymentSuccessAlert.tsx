@@ -7,7 +7,7 @@ interface PaymentSuccessAlertProps {
   paymentDetails?: {
     amount: number;
     paymentMethod: string;
-    transactionId: string;
+    transactionId: string | number;
     raffleTitle?: string;
     ticketQuantity?: number;
   } | null;
@@ -94,7 +94,7 @@ const PaymentSuccessAlert: React.FC<PaymentSuccessAlertProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-green-700">Transaction ID:</span>
                   <span className="text-sm font-mono text-green-800">
-                    #{paymentDetails.transactionId.slice(-8)}
+                    #{typeof paymentDetails.transactionId === 'string' ? paymentDetails.transactionId.slice(-8) : paymentDetails.transactionId}
                   </span>
                 </div>
 

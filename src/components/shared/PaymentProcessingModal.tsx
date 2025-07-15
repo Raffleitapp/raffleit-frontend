@@ -12,7 +12,7 @@ interface PaymentStatusResponse {
 interface PaymentProcessingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  paymentId: string;
+  paymentId: string | number | null;
   onPaymentComplete?: (status: PaymentStatusResponse) => void;
   onPaymentFailed?: (status: PaymentStatusResponse) => void;
 }
@@ -60,7 +60,7 @@ const PaymentProcessingModal: React.FC<PaymentProcessingModalProps> = ({
           
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
-              <strong>Payment ID:</strong> {paymentId.slice(-8)}
+              <strong>Payment ID:</strong> {typeof paymentId === 'string' ? paymentId.slice(-8) : paymentId}
             </p>
             <p className="text-sm text-blue-600 mt-1">
               You will be redirected automatically once the payment is confirmed.
