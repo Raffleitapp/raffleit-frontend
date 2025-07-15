@@ -243,7 +243,7 @@ const PublicRaffles = () => {
       setPaymentSuccessDetails({
         amount: amount || (selectedRaffle ? (selectedRaffle.ticketPrice || 0) * ticketQuantity : 0),
         paymentMethod: method === 'unknown' ? 'PayPal' : method,
-        transactionId: paymentId,
+        transactionId: paymentId || 'unknown',
         raffleTitle: raffleTitle,
         ticketQuantity: selectedRaffle?.type === 'raffle' ? quantity || ticketQuantity : undefined,
       });
@@ -463,7 +463,7 @@ const PublicRaffles = () => {
           ? parseFloat(donationAmount) 
           : (selectedRaffle.ticketPrice || 0) * ticketQuantity,
         paymentMethod: 'paypal', // Default since this is likely from PayPal flow
-        transactionId: currentPaymentId,
+        transactionId: currentPaymentId?.toString() || 'unknown',
         raffleTitle: selectedRaffle.title,
         ticketQuantity: selectedRaffle.type === 'raffle' ? ticketQuantity : undefined,
       });
